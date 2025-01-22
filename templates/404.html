@@ -1,7 +1,16 @@
 {% extends 'base.html' %}
 
+{% block title %}
+    Page Not Found
+{% endblock %}
+
 {% block content %}
-<marquee direction="down" width="1600" height="800" behavior="alternate" style="border:solid; font-size: 2em;" scrollamount="10">
-    <marquee behavior="alternate" scrollamount="10">YAHAN KYA MAIYA CHUDAANE AAYE HO??</marquee>
-</marquee>
+<div class="container mt-5 d-flex justify-content-center">
+    <div class="text-center">
+        <h1 class="display-1 text-danger">404</h1>
+        <h3 class="mb-3">Oops! Page Not Found</h3>
+        <p class="mb-4">The page you're looking for doesn't exist or has been moved.</p>
+        <a href="/" class="btn btn-primary">Go to Homepage</a>
+    </div>
+</div>
 {% endblock %}

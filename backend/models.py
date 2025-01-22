@@ -9,8 +9,7 @@ class User(db.Model):
     fullName = db.Column(db.String(50))
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     qualification = db.Column(db.String(50))
-    dob = db.Column(db.Date)
-    is_active = db.Column(db.Boolean, default=True)
+    dob = db.Column(db.String(10))
 
 
 class Subject(db.Model):
