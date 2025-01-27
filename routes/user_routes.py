@@ -16,9 +16,8 @@ def home():
 @app.route('/login', methods=["GET","POST"])
 def login():
 
-    userID = request.cookies.get('user_id')
-
-    if userID is not None:
+    if is_loggedIn():
+        flash('You are already logged in!', 'danger')
         return redirect(url_for('dashboard'))
 
     if request.method == 'POST':
@@ -28,18 +27,31 @@ def login():
 
         if not email or not password:
             flash("Email and password are required to Login!!", 'danger')
-            return render_template('login.html')
-        
+            return redirect(url_for('login.html'))
+
         existingUser = User.query.filter(User.email == email).first()
 
         if not check_password_hash(existingUser.password, password):
             flash('Wrong Password!', 'danger')
             return redirect(url_for('login'))
-        
+
+        if email == "admin@admin.com":
+            response = make_response(redirect(url_for('admin')))
+            response.set_cookie(
+                'admin_id',
+                'admin',
+                max_age=timedelta(days=30),
+                httponly=True,
+                secure=True,
+                samesite='Strict'
+            )
+            flash('Welcome Admin!', 'success')
+            return response
+
         response = make_response(redirect(url_for('dashboard')))
         
         response.set_cookie(
-            'user_id', 
+            'user_id',
             str(existingUser.id),
             max_age=timedelta(days=30),  
             httponly=True,
@@ -55,6 +67,11 @@ def login():
 
 @app.route('/signup', methods=["GET", "POST"])
 def signup():
+
+    if is_loggedIn():
+        flash('You are already logged in!', 'success')
+        return redirect(url_for('dashboard'))
+    
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')

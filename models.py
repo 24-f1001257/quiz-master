@@ -1,68 +1,103 @@
 from flask_sqlalchemy import SQLAlchemy
+from datetime import datetime, timezone
 
 db = SQLAlchemy()
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(36), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(30))
     password = db.Column(db.String(256), nullable=False)
     fullName = db.Column(db.String(50))
-    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     qualification = db.Column(db.String(50))
     dob = db.Column(db.String(10))
-
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    
+    quiz_attempts = db.relationship('QuizAttempt', backref='user', lazy=True)
+    scores = db.relationship('Score', backref='user', lazy=True)
 
 class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), unique=True, nullable=False, index=True)
     description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+
+    chapters = db.relationship('Chapter', backref='subject', lazy=True)
 
 class Chapter(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text)
     subject_id = db.Column(db.Integer, db.ForeignKey('subject.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
-    subject = db.relationship('Subject', backref=db.backref('chapters', lazy=True))
+    quizzes = db.relationship('Quiz', backref='chapter', lazy=True)
 
 class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text)
-    time_limit = db.Column(db.Integer, nullable=False)
+    date_of_quiz = db.Column(db.DateTime, nullable=False)
+    time_duration = db.Column(db.Integer, nullable=False)
     passing_score = db.Column(db.Integer, nullable=False)
     max_attempts = db.Column(db.Integer, default=1)
+    remarks = db.Column(db.Text)
     chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'), nullable=False, index=True)
     is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
-    chapter = db.relationship('Chapter', backref=db.backref('quizzes', lazy=True))
+    questions = db.relationship('Question', backref='quiz', lazy=True)
+    attempts = db.relationship('QuizAttempt', backref='quiz', lazy=True)
+    scores = db.relationship('Score', backref='quiz', lazy=True)
 
 class Question(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     statement = db.Column(db.Text, nullable=False)
     points = db.Column(db.Integer, nullable=False, default=1)
     quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
-    quiz = db.relationship('Quiz', backref=db.backref('questions', lazy=True))
-
+    options = db.relationship('Option', backref='question', lazy=True)
+    user_responses = db.relationship('UserResponse', backref='question', lazy=True)
 
 class Option(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     option_text = db.Column(db.Text, nullable=False)
     is_correct = db.Column(db.Boolean, default=False)
     question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False, index=True)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
-    question = db.relationship('Question', backref=db.backref('options', lazy=True))
+    user_responses = db.relationship('UserResponse', backref='selected_option', lazy=True)
+
+class QuizAttempt(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.id'), nullable=False)
+    attempt_number = db.Column(db.Integer, nullable=False)
+    start_time = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc))
+    end_time = db.Column(db.DateTime)
+    status = db.Column(db.String(20), default='in_progress')  # 'in_progress', 'completed', 'abandoned'
+
+    user_responses = db.relationship('UserResponse', backref='quiz_attempt', lazy=True)
+
+class UserResponse(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    quiz_attempt_id = db.Column(db.Integer, db.ForeignKey('quiz_attempt.id'), nullable=False)
+    question_id = db.Column(db.Integer, db.ForeignKey('question.id'), nullable=False)
+    selected_option_id = db.Column(db.Integer, db.ForeignKey('option.id'), nullable=False)
+    is_correct = db.Column(db.Boolean, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
 class Score(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    score = db.Column(db.Integer, nullable=False)
+    total_scored = db.Column(db.Integer, nullable=False)
     is_completed = db.Column(db.Boolean, default=False)
     passed = db.Column(db.Boolean)
-    timeStarted = db.Column(db.DateTime, nullable=False)
+    time_stamp_of_attempt = db.Column(db.DateTime, nullable=False, default=datetime.now(timezone.utc))
     timeEnded = db.Column(db.DateTime)
+    attempt_number = db.Column(db.Integer, nullable=False, default=1)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False, index=True)
     quiz_id = db.Column(db.Integer, db.ForeignKey('quiz.id'), nullable=False, index=True)
-
-    user = db.relationship('User', backref=db.backref('scores', lazy=True))
-    quiz = db.relationship('Quiz', backref=db.backref('scores', lazy=True))

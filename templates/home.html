@@ -3,9 +3,47 @@
 {% block title %} Home {% endblock %}
 
 {% block content %}
-    <div class="container">
-        <h1>Hello All</h1>
-        <h2>Welcome to Quiz Master</h2>
+<div class="container mt-5">
+    <div class="row align-items-center">
+        <div class="col-lg-6">
+            <h1 class="display-4 fw-bold mb-4">Welcome to Quiz Master</h1>
+            <p class="lead mb-4">Enhance your knowledge with our comprehensive quiz platform. Practice tests across various subjects and track your progress.</p>
+            <div class="d-grid gap-2 d-md-flex">
+                <a href="/signup" class="btn btn-primary btn-lg px-4">Get Started</a>
+                <a href="/login" class="btn btn-outline-primary btn-lg px-4">Login</a>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <img src="https://placehold.co/600x400" alt="Quiz Illustration" class="img-fluid rounded shadow">
+        </div>
     </div>
+
+    <div class="row mt-5 pt-5">
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title">Multiple Subjects</h3>
+                    <p class="card-text">Access quizzes from various subjects and enhance your knowledge across different domains.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title">Track Progress</h3>
+                    <p class="card-text">Monitor your performance with detailed analytics and progress tracking.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h3 class="card-title">Practice Tests</h3>
+                    <p class="card-text">Take practice tests to prepare for your exams and improve your scores.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 

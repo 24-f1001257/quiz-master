@@ -5,43 +5,55 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5 d-flex justify-content-center">
-    <div class="card p-4 shadow-lg" style="width: 30rem;">
-        <h1 class="text-center mb-4">Sign Up</h1>
-        <form method="POST" action="/signup">
-            <div class="mb-3">
-                <label for="username" class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" name="username" required placeholder="Enter a unique username">
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <h2 class="text-center mb-4">Create Account</h2>
+                    
+                    <form method="POST" action="{{ url_for('signup') }}">
+                        <div class="mb-3">
+                            <label for="fullName" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="fullName" name="fullName" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email address</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confirmPassword" class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="qualification" class="form-label">Qualification</label>
+                            <input type="text" class="form-control" id="qualification" name="qualification" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="dob" class="form-label">Date of Birth</label>
+                            <input type="date" class="form-control" id="dob" name="dob" required>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Create Account</button>
+                        </div>
+                    </form>
+
+                    <div class="text-center mt-3">
+                        <p class="mb-0">Already have an account? <a href="{{ url_for('login') }}" class="text-decoration-none">Login</a></p>
+                    </div>
+                </div>
             </div>
-            <div class="mb-3">
-                <label for="password" class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" name="password" required minlength="8" placeholder="Enter a strong password">
-            </div>
-            <div class="mb-3">
-                <label for="fullName" class="form-label">Full Name</label>
-                <input type="text" class="form-control" id="fullName" name="fullName" placeholder="Enter your full name">
-            </div>
-            <div class="mb-3">
-                <label for="email" class="form-label">Email</label>
-                <input type="email" class="form-control" id="email" name="email" required placeholder="Enter your email address">
-            </div>
-            <div class="mb-3">
-                <label for="qualification" class="form-label">Qualification</label>
-                <select class="form-select" id="qualification" name="qualification" required>
-                    <option value="" disabled selected>Choose your qualification</option>
-                    <option value="10th Pass">10th Pass</option>
-                    <option value="12th Pass">12th Pass</option>
-                    <option value="Undergraduate">Undergraduate</option>
-                    <option value="Postgraduate">Postgraduate</option>
-                    <option value="Doctrate">P.HD</option>
-                </select>
-            </div>
-            <div class="mb-3">
-                <label for="dob" class="form-label">Date of Birth</label>
-                <input type="date" class="form-control" id="dob" name="dob" placeholder="dd-mm-yyyy">
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Sign Up</button>
-        </form>
+        </div>
     </div>
 </div>
 {% endblock %}
