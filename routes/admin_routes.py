@@ -43,7 +43,7 @@ def add_subject():
     db.session.add(newSubject)
     db.session.commit()
     
-    flash('Subject added successfully!', 'success')
+    flash(f'{subName} added successfully!', 'success')
     return redirect(url_for('admin'))
 
 @app.route('/admin/delete/subject/<int:subject_id>', methods=['POST'])
@@ -55,7 +55,7 @@ def delete_subject(subject_id):
         Chapter.query.filter_by(subject_id=subject_id).delete()
         db.session.delete(subject)
         db.session.commit()
-        flash('Subject and its chapters deleted successfully!', 'success')
+        flash(f'{subject.name} deleted successfully!', 'success')
     except Exception as e:
         db.session.rollback()
         flash(f'Error deleting subject: {str(e)}', 'danger')
@@ -95,7 +95,7 @@ def add_chapter():
     ).first()
     
     if existingChapter:
-        flash('A chapter with this name already exists in this subject!', 'danger')
+        flash(f'A chapter with name : {chapName} already exists in this subject!', 'danger')
         return redirect(url_for('admin'))
     
     newChapter = Chapter(
@@ -109,7 +109,7 @@ def add_chapter():
     db.session.add(newChapter)
     db.session.commit()
 
-    flash(f'Chapter added successfully to {subject.name}!', 'success')
+    flash(f'{chapName} added successfully to {subject.name}!', 'success')
     return redirect(url_for('admin'))
 
 
@@ -125,5 +125,29 @@ def delete_chapter(chapter_id):
     except Exception as e:
         db.session.rollback()
         flash(f'Error deleting chapter: {str(e)}', 'danger')
+    
+    return redirect(url_for('admin'))
+
+@app.route('/admin/edit/chapter/<int:chapter_id>', methods=['POST'])
+@admin_required
+def edit_chapter(chapter_id):
+    chapter = Chapter.query.get_or_404(chapter_id)
+    
+    chapName = request.form.get('chapter_name')
+    chapDescription = request.form.get('chapter_description', '')
+
+    if not chapName:
+        flash('Chapter name is required!', 'danger')
+        return redirect(url_for('admin'))
+    
+    try:
+        chapter.name = chapName.strip()
+        chapter.description = chapDescription.strip()
+        chapter.updated_at = datetime.now(timezone.utc)
+        db.session.commit()
+        flash(f'{chapName} updated successfully!', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating chapter: {str(e)}', 'danger')
     
     return redirect(url_for('admin'))

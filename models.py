@@ -41,8 +41,6 @@ class Quiz(db.Model):
     date_of_quiz = db.Column(db.DateTime, nullable=False)
     time_duration = db.Column(db.Integer, nullable=False)
     passing_score = db.Column(db.Integer, nullable=False)
-    max_attempts = db.Column(db.Integer, default=1)
-    remarks = db.Column(db.Text)
     chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'), nullable=False, index=True)
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
