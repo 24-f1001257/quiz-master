@@ -5,8 +5,18 @@
     {% block head %}
     <title>{% block title %}{% endblock %} - Quiz Master</title>
     {% endblock %}
+    <!-- Google Fonts - Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
@@ -14,9 +24,9 @@
 
 <body>
     {% block navigation %}
-    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <nav class="navbar navbar-expand-lg">
         <div class="container-fluid">
-            <a class="navbar-brand" href="/">Quiz-Master</a>
+            <a class="navbar-brand" href="/"><i class="bi bi-mortarboard"></i> Quiz-Master</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
                 aria-label="Toggle navigation">
@@ -25,24 +35,41 @@
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
-                        <a class="nav-link active" aria-current="page" href="/">Home</a>
+                        <a class="nav-link active" aria-current="page" href="/"><i class="bi bi-house"></i> Home</a>
                     </li>
-                    {% if request.cookies.get('user_id') %}
+                    {% if session.get('user_id') %}
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('dashboard') }}">Dashboard</a>
+                        <a class="nav-link active" href="{{ url_for('dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                    </li>
+                    {% elif session.get('admin_id') %}
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('admin') }}"><i class="bi bi-journal-bookmark"></i> Subjects</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active text-danger" href="{{ url_for('logout') }}">Logout</a> 
+                        <a class="nav-link active" href="{{ url_for('allQuizzes') }}"><i class="bi bi-clipboard2-check"></i> Quizzes</a>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('login') }}">Login</a>
+                        <a class="nav-link active" href="{{ url_for('login') }}"><i class="bi bi-box-arrow-in-right"></i> Login</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active" href="{{ url_for('signup') }}">Signup</a>
+                        <a class="nav-link active" href="{{ url_for('signup') }}"><i class="bi bi-person-plus"></i> Signup</a>
                     </li>
                     {% endif %}
                 </ul>
+                {% if session.get('user_id') %}
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active text-danger" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a> 
+                    </li>
+                </ul>
+                {% elif session.get('admin_id') %}
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active text-danger" href="{{ url_for('adminLogout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                    </li>
+                </ul>
+                {% endif %}
             </div>
         </div>
     </nav>

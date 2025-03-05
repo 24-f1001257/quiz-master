@@ -5,7 +5,7 @@ db = SQLAlchemy()
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(30))
+    email = db.Column(db.String(30), unique=True, nullable=False)
     password = db.Column(db.String(256), nullable=False)
     fullName = db.Column(db.String(50))
     qualification = db.Column(db.String(50))
@@ -38,6 +38,8 @@ class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     description = db.Column(db.Text)
+    # start_date = db.Column(db.DateTime, nullable=False)
+    # end_date = db.Column(db.DateTime, nullable=True)
     date_of_quiz = db.Column(db.DateTime, nullable=False)
     time_duration = db.Column(db.Integer, nullable=False)
     passing_score = db.Column(db.Integer, nullable=False)
