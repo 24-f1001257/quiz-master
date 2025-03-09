@@ -1,4 +1,4 @@
-from flask import request, redirect, flash, render_template, url_for, session
+from flask import request, redirect, flash, render_template, url_for, session, jsonify
 from models import *
 from utils import *
 from app import app
@@ -10,7 +10,7 @@ from sqlalchemy import func
 def admin():
     try:
         subjects = Subject.query.all()
-        return render_template("admin.html", subjects=subjects)
+        return render_template("admin/admin.html", subjects=subjects)
     except Exception as e:
         app.logger.error(f"Admin dashboard error: {str(e)}")
         flash('Error loading admin dashboard', 'danger')
@@ -191,83 +191,100 @@ def edit_chapter(chapter_id):
 @app.route('/admin/add/quiz/<int:chapter_id>', methods=['POST'])
 @admin_required
 def add_quiz(chapter_id):
-    try:
+    if request.method == 'POST':
+        quiz_name = request.form.get('quiz_name')
+        description = request.form.get('quiz_description')
+        start_date_str = request.form.get('start_date')
+        end_date_str = request.form.get('end_date')
+        time_limit = request.form.get('time_limit')
+        passing_score = request.form.get('passing_score')
+        max_attempts = request.form.get('max_attempts', 3)  # Default to 3 if not specified
+        is_active = bool(request.form.get('is_active'))
+
         chapter = Chapter.query.get_or_404(chapter_id)
-        quiz_name = request.form.get("quiz_name")
-        description = request.form.get("quiz_description")
-        date_of_quiz_str = request.form.get("date_of_quiz")
-        time_limit = request.form.get("time_limit")
-        passing_score = request.form.get("passing_score")
-
-        if not all([quiz_name, date_of_quiz_str, time_limit, passing_score]):
-            flash("All required fields must be filled!", 'danger')
-            return redirect(url_for('subject_quizzes', subject_id=chapter.subject_id))
-
+        
         try:
-            date_of_quiz = datetime.strptime(date_of_quiz_str, "%Y-%m-%d")
+            # Convert date strings to timezone-aware datetime objects
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+            start_date = start_date.replace(tzinfo=timezone.utc)
+            
+            end_date = None
+            if end_date_str:
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+                end_date = end_date.replace(tzinfo=timezone.utc)
+            
             time_limit = int(time_limit)
             passing_score = int(passing_score)
-        except (ValueError, TypeError):
+            max_attempts = int(max_attempts)
+            
+            quiz = Quiz(
+                name=quiz_name,
+                description=description,
+                start_date=start_date,
+                end_date=end_date,
+                time_duration=time_limit,
+                passing_score=passing_score,
+                max_attempts=max_attempts,
+                chapter_id=chapter_id,
+                is_active=is_active,
+                created_at=datetime.now(timezone.utc)
+            )
+            
+            db.session.add(quiz)
+            db.session.commit()
+            
+            flash(f"Quiz '{quiz_name}' added successfully!", "success")
+            return redirect(url_for('subject_quizzes', subject_id=chapter.subject_id))
+            
+        except (ValueError, TypeError) as e:
             flash("Invalid date or number format!", 'danger')
             return redirect(url_for('subject_quizzes', subject_id=chapter.subject_id))
-
-        quiz = Quiz(
-            name=quiz_name,
-            description=description,
-            date_of_quiz=date_of_quiz,
-            time_duration=time_limit,
-            passing_score=passing_score,
-            chapter_id=chapter_id,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
-        )
-        db.session.add(quiz)
-        db.session.commit()
-        flash(f"Quiz '{quiz_name}' added successfully!", 'success')
-        return redirect(url_for('subject_quizzes', subject_id=chapter.subject_id))
-
-    except Exception as e:
-        db.session.rollback()
-        app.logger.error(f"Error adding quiz: {str(e)}")
-        flash('An error occurred while adding the quiz', 'danger')
-        return redirect(url_for('subject_quizzes', subject_id=chapter.subject_id))
 
 @app.route('/admin/quizzes', methods=['GET'])
 @admin_required
 def allQuizzes():
-    subject_id = request.args.get('subject_id', type=int)
-    chapter_id = request.args.get('chapter_id', type=int)
-    duration_range = request.args.get('duration')
+    # Get filter parameters
+    subject_id = request.args.get('subject')
     date_filter = request.args.get('date')
+    duration_filter = request.args.get('duration')
     sort_by = request.args.get('sort_by', 'date_desc')
     
+    now = datetime.now(timezone.utc)
+    
+    # Base query
     query = Quiz.query
     
+    # Apply filters
     if subject_id:
-        query = query.join(Chapter).join(Subject).filter(Subject.id == subject_id)
-    
-    if chapter_id:
-        query = query.filter(Quiz.chapter_id == chapter_id)
-    
-    if duration_range:
-        if duration_range == '0-15':
-            query = query.filter(Quiz.time_duration < 15)
-        elif duration_range == '15-30':
-            query = query.filter(Quiz.time_duration >= 15, Quiz.time_duration <= 30)
-        elif duration_range == '30+':
-            query = query.filter(Quiz.time_duration > 30)
+        chapters = Chapter.query.filter_by(subject_id=subject_id).all()
+        chapter_ids = [chapter.id for chapter in chapters]
+        query = query.filter(Quiz.chapter_id.in_(chapter_ids))
     
     if date_filter:
         try:
-            filter_date = datetime.strptime(date_filter, '%Y-%m-%d').date()
-            query = query.filter(func.date(Quiz.date_of_quiz) == filter_date)
+            # Convert the filter date to a timezone-aware datetime at the start of the day
+            filter_date = datetime.strptime(date_filter, '%Y-%m-%d')
+            filter_date = filter_date.replace(tzinfo=timezone.utc)
+            filter_date_end = filter_date.replace(hour=23, minute=59, second=59)
+            
+            # Filter quizzes that start on the selected date
+            query = query.filter(Quiz.start_date >= filter_date, Quiz.start_date <= filter_date_end)
         except ValueError:
             flash('Invalid date format', 'danger')
     
+    if duration_filter:
+        if duration_filter == '0-15':
+            query = query.filter(Quiz.time_duration <= 15)
+        elif duration_filter == '15-30':
+            query = query.filter(Quiz.time_duration > 15, Quiz.time_duration <= 30)
+        elif duration_filter == '30+':
+            query = query.filter(Quiz.time_duration > 30)
+    
+    # Apply sorting
     if sort_by == 'date_desc':
-        query = query.order_by(Quiz.date_of_quiz.desc())
+        query = query.order_by(Quiz.start_date.desc())
     elif sort_by == 'date_asc':
-        query = query.order_by(Quiz.date_of_quiz.asc())
+        query = query.order_by(Quiz.start_date.asc())
     elif sort_by == 'name_asc':
         query = query.order_by(Quiz.name.asc())
     elif sort_by == 'name_desc':
@@ -278,9 +295,31 @@ def allQuizzes():
         query = query.order_by(Quiz.time_duration.desc())
     
     quizzes = query.all()
-    subjects = Subject.query.all()
     
-    return render_template('adminQuiz.html', quizzes=quizzes, subjects=subjects)
+    # Ensure all quiz dates are timezone-aware
+    for quiz in quizzes:
+        if quiz.start_date and quiz.start_date.tzinfo is None:
+            db.session.query(Quiz).filter_by(id=quiz.id).update({
+                'start_date': quiz.start_date.replace(tzinfo=timezone.utc)
+            })
+        if quiz.end_date and quiz.end_date.tzinfo is None:
+            db.session.query(Quiz).filter_by(id=quiz.id).update({
+                'end_date': quiz.end_date.replace(tzinfo=timezone.utc)
+            })
+    
+    # Commit any timezone updates and refresh quizzes
+    if any(quiz.start_date.tzinfo is None for quiz in quizzes if quiz.start_date) or \
+       any(quiz.end_date.tzinfo is None for quiz in quizzes if quiz.end_date):
+        db.session.commit()
+        quizzes = query.all()  # Refresh the quiz objects
+    
+    subjects = Subject.query.all()
+    return render_template('admin/adminQuiz.html', 
+                         quizzes=quizzes,
+                         subjects=subjects,
+                         datetime=datetime,
+                         timezone=timezone,
+                         now=now)
 
 @app.route('/admin/quiz/<int:chapter_id>/add', methods=['GET', 'POST'])
 @admin_required
@@ -290,67 +329,99 @@ def add_quiz_form(chapter_id):
     if request.method == 'POST':
         quiz_name = request.form.get("quiz_name")
         description = request.form.get("quiz_description", "")
-        date_of_quiz = datetime.strptime(request.form.get("date_of_quiz"), "%Y-%m-%d")
+        start_date_str = request.form.get("start_date")
+        end_date_str = request.form.get("end_date")
         time_limit = int(request.form.get("time_limit"))
         passing_score = int(request.form.get("passing_score"))
+        max_attempts = int(request.form.get("max_attempts", 3))  # Default to 3 if not provided
         
-        if not quiz_name:
-            flash("Quiz name is required!", "danger")
+        if not quiz_name or not start_date_str:
+            flash("Quiz name and start date are required!", "danger")
             return redirect(url_for('add_quiz_form', chapter_id=chapter_id))
+        
+        try:
+            # Convert date strings to timezone-aware datetime objects
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+            start_date = start_date.replace(tzinfo=timezone.utc)
             
-        new_quiz = Quiz(
-            name=quiz_name,
-            description=description,
-            date_of_quiz=date_of_quiz,
-            time_duration=time_limit,
-            passing_score=passing_score,
-            chapter_id=chapter_id
-        )
-        
-        db.session.add(new_quiz)
-        db.session.commit()
-        
-        flash(f"Quiz '{quiz_name}' created successfully!", "success")
-        return redirect(url_for('add_quiz_questions', quiz_id=new_quiz.id))
+            end_date = None
+            if end_date_str:
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+                end_date = end_date.replace(tzinfo=timezone.utc)
+            
+            new_quiz = Quiz(
+                name=quiz_name,
+                description=description,
+                start_date=start_date,
+                end_date=end_date,
+                time_duration=time_limit,
+                passing_score=passing_score,
+                max_attempts=max_attempts,
+                chapter_id=chapter_id,
+                created_at=datetime.now(timezone.utc)
+            )
+            
+            db.session.add(new_quiz)
+            db.session.commit()
+            
+            flash(f"Quiz '{quiz_name}' created successfully!", "success")
+            return redirect(url_for('add_quiz_questions', quiz_id=new_quiz.id))
+        except Exception as e:
+            flash(f"Error creating quiz: {str(e)}", "danger")
+            return redirect(url_for('add_quiz_form', chapter_id=chapter_id))
     
     today = date.today().strftime("%Y-%m-%d")
-    return render_template('add_quiz.html', chapter=chapter, today=today)
+    return render_template('admin/add_quiz.html', chapter=chapter, today=today)
 
 @app.route('/admin/quiz/<int:quiz_id>/edit', methods=['POST'])
 @admin_required
 def edit_quiz(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
-    chapter = Chapter.query.get(quiz.chapter_id)
     
-    quiz_name = request.form.get("quiz_name")
-    description = request.form.get("quiz_description", "")
-    date_of_quiz_str = request.form.get("date_of_quiz")
-    time_duration = request.form.get("time_duration")
-    passing_score = request.form.get("passing_score")
+    if request.method == 'POST':
+        quiz_name = request.form.get('quiz_name')
+        description = request.form.get('quiz_description')
+        start_date_str = request.form.get('start_date')
+        end_date_str = request.form.get('end_date')
+        time_duration = request.form.get('time_duration')
+        passing_score = request.form.get('passing_score')
+        max_attempts = request.form.get('max_attempts', 3)
+        is_active = bool(request.form.get('is_active'))
+        
+        try:
+            # Convert date strings to timezone-aware datetime objects
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+            start_date = start_date.replace(tzinfo=timezone.utc)
+            
+            end_date = None
+            if end_date_str:
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+                end_date = end_date.replace(tzinfo=timezone.utc)
+            
+            time_duration = int(time_duration)
+            passing_score = int(passing_score)
+            max_attempts = int(max_attempts)
+            
+            quiz.name = quiz_name
+            quiz.description = description
+            quiz.start_date = start_date
+            quiz.end_date = end_date
+            quiz.time_duration = time_duration
+            quiz.passing_score = passing_score
+            quiz.max_attempts = max_attempts
+            quiz.is_active = is_active
+            quiz.updated_at = datetime.now(timezone.utc)
+            
+            db.session.commit()
+            flash(f"Quiz '{quiz_name}' updated successfully!", "success")
+            return redirect(url_for('subject_quizzes', subject_id=quiz.chapter.subject_id))
+            
+        except (ValueError, TypeError) as e:
+            flash("Invalid date or number format!", 'danger')
+            return redirect(url_for('subject_quizzes', subject_id=quiz.chapter.subject_id))
     
-    if not quiz_name:
-        flash("Quiz name is required!", "danger")
-        return redirect(url_for('subject_quizzes', subject_id=chapter.subject_id))
-        
-    try:
-        date_of_quiz = datetime.strptime(date_of_quiz_str, "%Y-%m-%d")
-        time_duration = int(time_duration)
-        passing_score = int(passing_score)
-        
-        quiz.name = quiz_name
-        quiz.description = description
-        quiz.date_of_quiz = date_of_quiz
-        quiz.time_duration = time_duration
-        quiz.passing_score = passing_score
-        quiz.updated_at = datetime.now(timezone.utc)
-        
-        db.session.commit()
-        flash(f"Quiz '{quiz_name}' updated successfully!", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash(f"Error updating quiz: {str(e)}", "danger")
-    
-    return redirect(url_for('subject_quizzes', subject_id=chapter.subject_id))
+    flash("Invalid request method!", 'danger')
+    return redirect(url_for('subject_quizzes', subject_id=quiz.chapter.subject_id))
 
 @app.route('/admin/quiz/<int:quiz_id>/delete', methods=['POST'])
 @admin_required
@@ -447,7 +518,7 @@ def add_quiz_questions(quiz_id):
         return redirect(url_for('add_quiz_questions', quiz_id=quiz_id))
     
     questions = Question.query.filter_by(quiz_id=quiz_id).all()
-    return render_template('quiz_questions.html', quiz=quiz, questions=questions)
+    return render_template('admin/quiz_questions.html', quiz=quiz, questions=questions)
 
 @app.route('/admin/subject/<int:subject_id>/quizzes')
 @admin_required
@@ -459,8 +530,48 @@ def subject_quizzes(subject_id):
     
     for chapter in subject.chapters:
         chapter.quizzes = Quiz.query.filter_by(chapter_id=chapter.id)\
-            .order_by(Quiz.date_of_quiz.desc())\
+            .order_by(Quiz.start_date.desc())\
             .all()
+        
+        # Ensure all quiz dates are timezone-aware
+        for quiz in chapter.quizzes:
+            if quiz.start_date and quiz.start_date.tzinfo is None:
+                db.session.query(Quiz).filter_by(id=quiz.id).update({
+                    'start_date': quiz.start_date.replace(tzinfo=timezone.utc)
+                })
+            if quiz.end_date and quiz.end_date.tzinfo is None:
+                db.session.query(Quiz).filter_by(id=quiz.id).update({
+                    'end_date': quiz.end_date.replace(tzinfo=timezone.utc)
+                })
+        
+        # Commit changes if any dates were updated
+        if any(quiz.start_date.tzinfo is None for quiz in chapter.quizzes if quiz.start_date) or \
+           any(quiz.end_date.tzinfo is None for quiz in chapter.quizzes if quiz.end_date):
+            db.session.commit()
+            # Refresh quizzes after committing changes
+            chapter.quizzes = Quiz.query.filter_by(chapter_id=chapter.id)\
+                .order_by(Quiz.start_date.desc())\
+                .all()
     
-    return render_template('subject_quizzes.html', subject=subject)
+    return render_template('admin/subject_quizzes.html', subject=subject)
+
+@app.route('/admin/quiz/<int:quiz_id>/toggle-visibility', methods=['POST'])
+@admin_required
+def toggle_quiz_visibility(quiz_id):
+    try:
+        quiz = Quiz.query.get_or_404(quiz_id)
+        
+        # Parse request data
+        data = request.get_json()
+        is_active = data.get('is_active', False) if data else False
+        
+        # Update quiz visibility
+        quiz.is_active = is_active
+        db.session.commit()
+        
+        return jsonify({'success': True, 'is_active': quiz.is_active})
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error toggling quiz visibility: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 

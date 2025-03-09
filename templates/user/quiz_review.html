@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">Quiz Results - {{ quiz.name }}</h3>
+            <div>
+                <h5 class="mb-0">Total Score: {{ "%.1f"|format(score.total_scored) }}%</h5>
+                <small class="text-white">{{ "Passed" if score.passed else "Failed" }}</small>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col">
+                    <p class="mb-1"><strong>Start Time:</strong> {{ score.start_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    <p class="mb-1"><strong>End Time:</strong> {{ score.end_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    <p class="mb-0"><strong>Attempt Number:</strong> {{ score.attempt_number }}</p>
+                </div>
+            </div>
+
+            <div class="questions-review mt-4">
+                {% for response in user_responses %}
+                <div class="card mb-3 {% if response.is_correct %}border-success{% else %}border-danger{% endif %}">
+                    <div class="card-header {% if response.is_correct %}bg-success{% else %}bg-danger{% endif %} text-white d-flex justify-content-between">
+                        <span>Question {{ loop.index }}</span>
+                        <span>Points: {% if response.is_correct %}{{ response.question.points }}{% else %}0{% endif %}/{{ response.question.points }}</span>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="card-title">{{ response.question.statement }}</h5>
+                        <div class="options mt-3">
+                            {% for option in response.question.options %}
+                            <div class="option mb-2 p-2 rounded 
+                                {% if option.id == response.selected_option_id %}
+                                    {% if response.is_correct %}
+                                        bg-success text-white
+                                    {% else %}
+                                        bg-danger text-white
+                                    {% endif %}
+                                {% elif option.is_correct %}
+                                    bg-success text-white
+                                {% endif %}">
+                                {{ option.option_text }}
+                                {% if option.id == response.selected_option_id %}
+                                    <i class="fas fa-circle-check float-end"></i>
+                                {% elif option.is_correct %}
+                                    <i class="fas fa-check float-end"></i>
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mb-4">
+        <a href="{{ url_for('view_quiz', quiz_id=quiz.id) }}" class="btn btn-primary">Back to Quiz</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Go to Dashboard</a>
+    </div>
+</div>
+{% endblock %}

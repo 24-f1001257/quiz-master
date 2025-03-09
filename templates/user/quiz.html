@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Quiz: {{ quiz.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <!-- Quiz Header -->
+        <div class="col-12 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">{{ quiz.name }}</h3>
+                    <div class="d-flex align-items-center">
+                        <div class="bg-light text-dark rounded px-3 py-2 me-3">
+                            <i class="bi bi-clock"></i> <span id="timer">00:00</span>
+                        </div>
+                        <span class="badge bg-light text-dark">
+                            {{ quiz.time_duration }} minutes
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">{{ quiz.description }}</p>
+                    <div class="d-flex flex-wrap">
+                        <span class="badge bg-info me-2 mb-2">{{ questions|length }} Questions</span>
+                        <span class="badge bg-warning text-dark me-2 mb-2">Passing score: {{ quiz.passing_score }}%</span>
+                        <span class="badge bg-secondary me-2 mb-2">Attempt {{ attempt_number }} of {{ quiz.max_attempts }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz Form -->
+    <form id="quiz-form" method="POST" action="{{ url_for('submit_quiz', quiz_id=quiz.id) }}">
+        {% for question in questions %}
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h5 class="mb-0">Question {{ loop.index }}: {{ question.statement }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="list-group">
+                            {% for option in question.options %}
+                            <div class="list-group-item border-0">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" 
+                                           name="question_{{ question.id }}" 
+                                           id="option_{{ option.id }}" 
+                                           value="{{ option.id }}"
+                                           {% if question.selected_option == option.id %}checked{% endif %}>
+                                    <label class="form-check-label w-100" for="option_{{ option.id }}">
+                                        {{ option.option_text }}
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+            <button type="submit" class="btn btn-primary btn-lg px-5" data-bs-toggle="modal" data-bs-target="#confirmSubmitModal">
+                <i class="bi bi-check-circle"></i> Submit Quiz
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmSubmitModal" tabindex="-1" aria-labelledby="confirmSubmitModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmSubmitModalLabel">Confirm Submission</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to submit your quiz? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmSubmit">Submit Quiz</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Timer only -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Timer functionality
+    let timeRemaining = "{{ time_remaining }}";
+    const timerElement = document.getElementById('timer');
+    const quizForm = document.getElementById('quiz-form');
+    
+    function updateTimer() {
+        const minutes = Math.floor(timeRemaining / 60);
+        const seconds = timeRemaining % 60;
+        timerElement.textContent = minutes.toString().padStart(2, '0') + ':' + 
+                                   seconds.toString().padStart(2, '0');
+        
+        if (timeRemaining <= 0) {
+            clearInterval(timerInterval);
+            alert('Time\'s up! Your quiz will be submitted.');
+            quizForm.submit();
+        } else {
+            timeRemaining--;
+        }
+    }
+    
+    updateTimer();
+    const timerInterval = setInterval(updateTimer, 1000);
+    
+    // Submit form when confirmed
+    document.getElementById('confirmSubmit').addEventListener('click', function() {
+        quizForm.submit();
+    });
+});
+</script>
+{% endblock %}

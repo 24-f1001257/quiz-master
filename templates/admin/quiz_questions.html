@@ -55,16 +55,20 @@
                             <p><strong><i class="bi bi-journal-text"></i> Description:</strong> 
                                {{ quiz.description or 'No description provided' }}</p>
                         </div>
-                        <div class="col-md-3">
-                            <p><strong><i class="bi bi-calendar-event"></i> Date:</strong> 
-                               {{ quiz.date_of_quiz.strftime('%Y-%m-%d') }}</p>
+                        <div class="col-md-2">
+                            <p><strong><i class="bi bi-calendar3"></i> Start:</strong> 
+                               {{ quiz.start_date.strftime('%Y-%m-%d') }}</p>
+                        </div>
+                        <div class="col-md-2">
+                            <p><strong><i class="bi bi-calendar-check"></i> Deadline:</strong> 
+                               {{ quiz.end_date.strftime('%Y-%m-%d') if quiz.end_date else 'None' }}</p>
                         </div>
                         <div class="col-md-2">
                             <p><strong><i class="bi bi-clock"></i> Duration:</strong> 
                                {{ quiz.time_duration }} min</p>
                         </div>
-                        <div class="col-md-3">
-                            <p><strong><i class="bi bi-award"></i> Passing Score:</strong> 
+                        <div class="col-md-2">
+                            <p><strong><i class="bi bi-award"></i> Passing:</strong> 
                                {{ quiz.passing_score }}%</p>
                         </div>
                     </div>

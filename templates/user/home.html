@@ -9,9 +9,9 @@
             <h1 class="display-4 fw-bold mb-4">Welcome to Quiz Master</h1>
             <p class="lead mb-4">Enhance your knowledge with our comprehensive quiz platform. Practice tests across various subjects and track your progress.</p>
             <div class="d-grid gap-2 d-md-flex">
-                {% if request.cookies.get('user_id') %}
+                {% if session.get('user_id') %}
                     <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg px-4">Go to Dashboard</a>
-                {% elif request.cookies.get('admin_id') %}
+                {% elif session.get('admin_id') %}
                     <a href="{{ url_for('admin') }}" class="btn btn-primary btn-lg px-4">Go to Admin</a>
                 {% else %}
                     <a href="/signup" class="btn btn-primary btn-lg px-4">Get Started</a>

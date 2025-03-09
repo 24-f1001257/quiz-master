@@ -13,10 +13,6 @@
                     <h2 class="text-center mb-4">Create Account</h2>
                     
                     <form method="POST" action="{{ url_for('signup') }}">
-                        <div class="mb-3">
-                            <label for="username" class="form-label">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
-                        </div>
 
                         <div class="mb-3">
                             <label for="fullName" class="form-label">Full Name</label>
@@ -45,7 +41,7 @@
 
                         <div class="mb-3">
                             <label for="dob" class="form-label">Date of Birth</label>
-                            <input type="date" class="form-control" id="dob" name="dob" required>
+                            <input type="date" class="form-control" id="dob" name="dob" max="{{ datetime.now(timezone.utc).strftime('%Y-%m-%d') }}">
                         </div>
 
                         <div class="d-grid gap-2">

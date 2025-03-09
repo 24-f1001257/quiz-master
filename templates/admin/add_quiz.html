@@ -32,9 +32,14 @@
                         
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label for="date_of_quiz" class="form-label">Quiz Date</label>
-                                <input type="date" class="form-control" id="date_of_quiz" name="date_of_quiz" 
+                                <label for="start_date" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="start_date" name="start_date" 
                                        value="{{ today }}" required>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="end_date" class="form-label">End Date (Deadline)</label>
+                                <input type="date" class="form-control" id="end_date" name="end_date">
                             </div>
                             
                             <div class="col-md-4 mb-3">
@@ -42,11 +47,26 @@
                                 <input type="number" class="form-control" id="time_limit" name="time_limit" 
                                        value="30" min="1" required>
                             </div>
-                            
+                        </div>
+                        
+                        <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label for="passing_score" class="form-label">Passing Score (%)</label>
                                 <input type="number" class="form-control" id="passing_score" name="passing_score" 
                                        value="60" min="1" max="100" required>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <label for="max_attempts" class="form-label">Max Attempts Allowed</label>
+                                <input type="number" class="form-control" id="max_attempts" name="max_attempts" 
+                                       value="3" min="1" required>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <div class="form-check form-switch mt-4">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active" checked>
+                                    <label class="form-check-label" for="is_active">Make quiz visible to students</label>
+                                </div>
                             </div>
                         </div>
                         
