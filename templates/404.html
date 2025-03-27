@@ -1,15 +1,21 @@
 {% extends 'base.html' %}
 
 {% block title %}
-    Page Not Found
+    {% if error_message %}Error{% else %}Page Not Found{% endif %}
 {% endblock %}
 
 {% block content %}
 <div class="container mt-5 d-flex justify-content-center">
     <div class="text-center">
-        <h1 class="display-1 text-danger">404</h1>
-        <h3 class="mb-3">Oops! Page Not Found</h3>
-        <p class="mb-4">The page you're looking for doesn't exist or has been moved.</p>
+        {% if error_message %}
+            <h1 class="display-1 text-danger">500</h1>
+            <h3 class="mb-3">Oops! Something went wrong</h3>
+            <p class="mb-4">{{ error_message }}</p>
+        {% else %}
+            <h1 class="display-1 text-danger">404</h1>
+            <h3 class="mb-3">Oops! Page Not Found</h3>
+            <p class="mb-4">The page you're looking for doesn't exist or has been moved.</p>
+        {% endif %}
         <a href="/" class="btn btn-primary">Go to Homepage</a>
     </div>
 </div>

@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{# Set which navigation item should be active #}
+{% set active_dashboard = true %}
+
+{% block styles %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- User Quick Info & Action Panel -->
+    <div class="card shadow-lg mb-5">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-2">Welcome, {{user.fullName}}!</h1>
+                    <p class="lead mb-0">Ready to challenge yourself with some quizzes today?</p>
+                </div>
+                <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                    <div class="btn-group">
+                        <a href="{{ url_for('user_profile') }}" class="btn btn-primary">
+                            <i class="bi bi-person-circle"></i> View Profile
+                        </a>
+                        <a href="{{ url_for('edit_profile') }}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil-square"></i> Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Available Subjects -->
+    {% if subjects %}
+    <h2 class="mb-4"><i class="bi bi-list-check"></i> Available Subjects</h2>
+    <div class="row g-4">
+        {% for subject in subjects %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-lg">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0 fs-5">{{ subject.name }}</h3>
+                    <span class="badge bg-info">{{ subject.chapters|length }} Chapters</span>
+                </div>
+                <div class="card-body">
+                    {% if subject.description %}
+                    <p>{{ subject.description }}</p>
+                    {% else %}
+                    <p class="text-muted">No description available</p>
+                    {% endif %}
+                    
+                    <div class="mt-3">
+                        <p><i class="bi bi-journal-check"></i> <strong>{{ subject_quiz_counts[subject.id] }}</strong> Active Quizzes</p>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('user_quizzes', subject_id=subject.id) }}" class="btn btn-primary w-100">
+                        <i class="bi bi-arrow-right-circle"></i> View Quizzes
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info mb-5 text-center">
+        <h3><i class="bi bi-info-circle"></i> No subjects available at the moment</h3>
+        <p>Check back later for new content!</p>
+    </div>
+    {% endif %}
+
+    <!-- Stats Overview with Improved Styling -->
+    <div class="card shadow-lg mt-5">
+        <div class="card-header">
+            <h2 class="mb-0"><i class="bi bi-bar-chart-line"></i> Your Statistics</h2>
+        </div>
+        <div class="card-body p-4">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <div class="card stat-card h-100 border-0 shadow">
+                        <div class="stat-value">{{ stats.total_quizzes or 0 }}</div>
+                        <div class="stat-label">Total Quizzes Attempted</div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card stat-card h-100 border-0 shadow">
+                        <div class="stat-value">{{ stats.highest_score or 'N/A' }}</div>
+                        <div class="stat-label">Highest Score</div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card stat-card h-100 border-0 shadow">
+                        <div class="stat-value">{{ "%.1f"|format(stats.average_score or 0) }}</div>
+                        <div class="stat-label">Average Score</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+{% endblock %}
+

@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <!-- Left column - Profile information -->
+        <div class="col-lg-4">
+            <div class="card shadow-lg mb-4">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="bi bi-person-circle"></i> Profile Information</h3>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <div class="display-1 text-primary mb-3">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <h2>{{ user.fullName }}</h2>
+                        <p class="text-muted">{{ user.qualification or 'No qualification added' }}</p>
+                    </div>
+                    
+                    <div class="border-top pt-3">
+                        <p><strong><i class="bi bi-envelope"></i> Email:</strong> {{ user.email }}</p>
+                        <p><strong><i class="bi bi-calendar-date"></i> Date of Birth:</strong> 
+                            {% if user.dob %}
+                                {{ user.dob.strftime('%d %B, %Y') }}
+                            {% else %}
+                                Not specified
+                            {% endif %}
+                        </p>
+                        <p><strong><i class="bi bi-calendar-check"></i> Member Since:</strong> 
+                            {{ user.created_at.strftime('%d %B, %Y') }}
+                        </p>
+                    </div>
+                    
+                    <div class="d-grid gap-2 mt-4">
+                        <a href="{{ url_for('edit_profile') }}" class="btn btn-primary">
+                            <i class="bi bi-pencil-square"></i> Edit Profile
+                        </a>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-speedometer2"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right column - Stats and activity -->
+        <div class="col-lg-8">
+            <!-- User statistics -->
+            <div class="card shadow-lg mb-4">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="bi bi-bar-chart"></i> Quiz Statistics</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <div class="card stat-card h-100 border-0 shadow">
+                                <div class="stat-value">{{ total_quizzes_completed }}</div>
+                                <div class="stat-label">Quizzes Completed</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card stat-card h-100 border-0 shadow">
+                                <div class="stat-value">{{ total_quizzes_passed }}</div>
+                                <div class="stat-label">Quizzes Passed</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="card stat-card h-100 border-0 shadow">
+                                <div class="stat-value">{{ "%.1f"|format(passing_rate) }}%</div>
+                                <div class="stat-label">Passing Rate</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent activity -->
+            <div class="card shadow-lg">
+                <div class="card-header">
+                    <h3 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activity</h3>
+                </div>
+                <div class="card-body">
+                    {% if recent_activity %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Quiz</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Score</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activity in recent_activity %}
+                                <tr>
+                                    <td>{{ activity.quiz.name }}</td>
+                                    <td>{{ activity.start_time.strftime('%d %b, %Y') }}</td>
+                                    <td>
+                                        {% if activity.status == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% elif activity.status == 'in_progress' %}
+                                            <span class="badge bg-warning text-dark">In Progress</span>
+                                        {% elif activity.status == 'expired' %}
+                                            <span class="badge bg-danger">Expired</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if activity.status == 'completed' and activity.score %}
+                                            {{ "%.1f"|format(activity.score.total_scored) }}%
+                                            {% if activity.score.passed %}
+                                                <span class="badge bg-success">Passed</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Failed</span>
+                                            {% endif %}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if activity.status == 'completed' and activity.score %}
+                                            <a href="{{ url_for('quiz_review', quiz_id=activity.quiz.id, score_id=activity.score.id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i> Review
+                                            </a>
+                                        {% elif activity.status == 'in_progress' %}
+                                            <form method="POST" action="{{ url_for('start_quiz', quiz_id=activity.quiz.id) }}">
+                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-play-circle"></i> Continue
+                                                </button>
+                                            </form>
+                                        {% else %}
+                                            <a href="{{ url_for('view_quiz', quiz_id=activity.quiz.id) }}" 
+                                               class="btn btn-sm btn-outline-secondary">
+                                                <i class="bi bi-info-circle"></i> Details
+                                            </a>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info text-center">
+                        <i class="bi bi-info-circle"></i> No recent activity found.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

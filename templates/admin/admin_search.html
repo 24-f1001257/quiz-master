@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results{% endblock %}
+
+{# Set which navigation items should be active #}
+{% set active_dashboard = true %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-search"></i> Search Results</h1>
+        <a href="{{ url_for('admin') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+    
+    {% if query %}
+    <!-- Search Results -->
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h3 class="mb-0">Results for "{{ query }}"</h3>
+            <div>
+                <span class="badge bg-secondary">Filter:</span>
+                <div class="btn-group ms-2">
+                    <a href="{{ url_for('admin_search', q=query, type='all') }}" class="btn btn-sm btn-outline-secondary {% if search_type == 'all' %}active{% endif %}">All</a>
+                    <a href="{{ url_for('admin_search', q=query, type='users') }}" class="btn btn-sm btn-outline-secondary {% if search_type == 'users' %}active{% endif %}">Users</a>
+                    <a href="{{ url_for('admin_search', q=query, type='subjects') }}" class="btn btn-sm btn-outline-secondary {% if search_type == 'subjects' %}active{% endif %}">Subjects</a>
+                    <a href="{{ url_for('admin_search', q=query, type='chapters') }}" class="btn btn-sm btn-outline-secondary {% if search_type == 'chapters' %}active{% endif %}">Chapters</a>
+                    <a href="{{ url_for('admin_search', q=query, type='quizzes') }}" class="btn btn-sm btn-outline-secondary {% if search_type == 'quizzes' %}active{% endif %}">Quizzes</a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <!-- Users Section -->
+            {% if search_type == 'all' or search_type == 'users' %}
+            <div class="p-3 border-bottom">
+                <h4 class="mb-3">
+                    <i class="bi bi-people"></i> Users
+                    <span class="badge bg-primary">{{ results.users|length }}</span>
+                </h4>
+                
+                {% if results.users %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in results.users %}
+                            <tr>
+                                <td>{{ user.fullName }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.created_at.strftime('%Y-%m-%d') }}</td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#viewUserModal-{{ user.id }}">
+                                        <i class="bi bi-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted">No users found matching "{{ query }}"</p>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Subjects Section -->
+            {% if search_type == 'all' or search_type == 'subjects' %}
+            <div class="p-3 border-bottom">
+                <h4 class="mb-3">
+                    <i class="bi bi-journal-bookmark"></i> Subjects
+                    <span class="badge bg-primary">{{ results.subjects|length }}</span>
+                </h4>
+                
+                {% if results.subjects %}
+                <div class="row g-3">
+                    {% for subject in results.subjects %}
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ subject.name }}</h5>
+                                <p class="card-text text-muted">{{ subject.description }}</p>
+                            </div>
+                            <div class="card-footer bg-white">
+                                <a href="{{ url_for('subject_quizzes', subject_id=subject.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-clipboard2-check"></i> View Quizzes
+                                </a>
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editSubjectModal-{{ subject.id }}">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No subjects found matching "{{ query }}"</p>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Chapters Section -->
+            {% if search_type == 'all' or search_type == 'chapters' %}
+            <div class="p-3 border-bottom">
+                <h4 class="mb-3">
+                    <i class="bi bi-bookmarks"></i> Chapters
+                    <span class="badge bg-primary">{{ results.chapters|length }}</span>
+                </h4>
+                
+                {% if results.chapters %}
+                <div class="row g-3">
+                    {% for chapter in results.chapters %}
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ chapter.name }}</h5>
+                                <span class="badge" style="background-color: var(--primary-color);">{{ chapter.subject.name }}</span>
+                                <p class="card-text text-muted mt-2">{{ chapter.description }}</p>
+                            </div>
+                            <div class="card-footer bg-white">
+                                <a href="{{ url_for('subject_quizzes', subject_id=chapter.subject_id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-clipboard2-check"></i> View Quizzes
+                                </a>
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editChapterModal-{{ chapter.id }}">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No chapters found matching "{{ query }}"</p>
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <!-- Quizzes Section -->
+            {% if search_type == 'all' or search_type == 'quizzes' %}
+            <div class="p-3">
+                <h4 class="mb-3">
+                    <i class="bi bi-clipboard2-check"></i> Quizzes
+                    <span class="badge bg-primary">{{ results.quizzes|length }}</span>
+                </h4>
+                
+                {% if results.quizzes %}
+                <div class="row g-3">
+                    {% for quiz in results.quizzes %}
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">{{ quiz.name }}</h5>
+                                <span class="badge {% if quiz.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ 'Active' if quiz.is_active else 'Inactive' }}
+                                </span>
+                            </div>
+                            <div class="card-body">
+                                {% if quiz.chapter and quiz.chapter.subject %}
+                                <div class="mb-2">
+                                    <span class="badge me-1" style="background-color: var(--primary-color);">{{ quiz.chapter.subject.name }}</span>
+                                    <span class="badge" style="background-color: var(--secondary-color);">{{ quiz.chapter.name }}</span>
+                                </div>
+                                {% endif %}
+                                <p class="card-text">{{ quiz.description }}</p>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">{{ quiz.time_duration }} minutes</small>
+                                    <small class="text-muted">{{ quiz.start_date.strftime('%Y-%m-%d') }}</small>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white">
+                                <a href="{{ url_for('add_quiz_questions', quiz_id=quiz.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-list-check"></i> Manage Questions
+                                </a>
+                                <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editQuizModal-{{ quiz.id }}">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No quizzes found matching "{{ query }}"</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

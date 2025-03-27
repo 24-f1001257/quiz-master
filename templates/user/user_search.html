@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-search"></i> Search Results</h1>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+    
+    {% if query %}
+    <!-- Search Results -->
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h3 class="mb-0">Search Results for "{{ query }}"</h3>
+        </div>
+        <div class="card-body p-0">
+            <!-- Quizzes Section (most important, so it's first) -->
+            <div class="p-3 border-bottom">
+                <h4 class="mb-3">
+                    <i class="bi bi-clipboard2-check"></i> Quizzes
+                    <span class="badge bg-primary">{{ results.quizzes|length }}</span>
+                </h4>
+                
+                {% if results.quizzes %}
+                <div class="row g-3">
+                    {% for quiz in results.quizzes %}
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">{{ quiz.name }}</h5>
+                                <span class="badge bg-success">Available</span>
+                            </div>
+                            <div class="card-body">
+                                {% if quiz.chapter and quiz.chapter.subject %}
+                                <div class="mb-2">
+                                    <span class="badge me-1" style="background-color: var(--primary-color);">{{ quiz.chapter.subject.name }}</span>
+                                    <span class="badge" style="background-color: var(--secondary-color);">{{ quiz.chapter.name }}</span>
+                                </div>
+                                {% endif %}
+                                <p class="card-text">{{ quiz.description }}</p>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">Duration: {{ quiz.time_duration }} min</small>
+                                    <small class="text-muted">Start: {{ quiz.start_date.strftime('%Y-%m-%d') }}</small>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white">
+                                <a href="{{ url_for('view_quiz', quiz_id=quiz.id) }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-eye"></i> View Quiz
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No quizzes found matching "{{ query }}"</p>
+                {% endif %}
+            </div>
+            
+            <!-- Subjects Section -->
+            <div class="p-3 border-bottom">
+                <h4 class="mb-3">
+                    <i class="bi bi-journal-bookmark"></i> Subjects
+                    <span class="badge bg-primary">{{ results.subjects|length }}</span>
+                </h4>
+                
+                {% if results.subjects %}
+                <div class="row g-3">
+                    {% for subject in results.subjects %}
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ subject.name }}</h5>
+                                <p class="card-text text-muted">{{ subject.description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No subjects found matching "{{ query }}"</p>
+                {% endif %}
+            </div>
+            
+            <!-- Chapters Section -->
+            <div class="p-3">
+                <h4 class="mb-3">
+                    <i class="bi bi-bookmarks"></i> Chapters
+                    <span class="badge bg-primary">{{ results.chapters|length }}</span>
+                </h4>
+                
+                {% if results.chapters %}
+                <div class="row g-3">
+                    {% for chapter in results.chapters %}
+                    <div class="col-md-6">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ chapter.name }}</h5>
+                                <span class="badge" style="background-color: var(--primary-color);">{{ chapter.subject.name }}</span>
+                                <p class="card-text text-muted mt-2">{{ chapter.description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted">No chapters found matching "{{ query }}"</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

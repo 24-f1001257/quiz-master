@@ -2,42 +2,21 @@
 
 {% block title %}{{ subject.name }} - Quizzes{% endblock %}
 
-{% block navigation %}
-<nav class="navbar navbar-expand-lg">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="/"><i class="bi bi-mortarboard"></i> Quiz-Master</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                    <a class="nav-link active" aria-current="page" href="/"><i class="bi bi-house"></i> Home</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="{{ url_for('admin') }}"><i class="bi bi-journal-bookmark"></i> Subjects</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link active" href="{{ url_for('allQuizzes') }}"><i class="bi bi-clipboard2-check"></i> Quizzes</a>
-                </li>
-            </ul>
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link active text-danger" href="{{ url_for('adminLogout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
-{% endblock %}
+{# Set which navigation items should be active #}
+{% set active_dashboard = false %}
+{% set active_subjects = true %}
+{% set active_quizzes = false %}
+{% set active_users = false %}
+{% set active_login = false %}
+{% set active_signup = false %}
+
 
 {% block content %}
 <div class="container py-4">
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
-            <li class="breadcrumb-item"><a href="{{ url_for('admin') }}">Subjects</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin_subjects') }}">Subjects</a></li>
             <li class="breadcrumb-item active" aria-current="page">{{ subject.name }}</li>
         </ol>
     </nav>

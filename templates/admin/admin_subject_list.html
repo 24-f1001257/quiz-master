@@ -1,0 +1,297 @@
+{% extends "base.html" %}
+
+{% block title %}Subject Management{% endblock %}
+
+{# Reset all navigation states #}
+{% set active_dashboard = false %}
+{% set active_subjects = true %}
+{% set active_quizzes = false %}
+{% set active_users = false %}
+{% set active_login = false %}
+{% set active_signup = false %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-journal-bookmark"></i> Subject Management</h1>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+            <i class="bi bi-plus-circle"></i> Add Subject
+        </button>
+    </div>
+
+    <!-- Subjects Grid -->
+    <div class="row">
+        {% for subject in subjects %}
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0 h5">
+                        <a href="{{ url_for('subject_quizzes', subject_id=subject.id) }}"
+                            class="text-decoration-none text-white">
+                            {{ subject.name }}
+                    </h3>
+                    </a>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                            data-bs-target="#editSubjectModal-{{ subject.id }}">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
+                            data-bs-target="#addChapterModal-{{ subject.id }}">
+                            <i class="bi bi-plus-lg"></i> Chapter
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                            data-bs-target="#deleteSubjectModal-{{ subject.id }}">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">{{ subject.description or 'No description available.' }}</p>
+
+                    <h5 class="mt-4 mb-3">Chapters</h5>
+                    {% if subject.chapters %}
+                    <div class="list-group">
+                        {% for chapter in subject.chapters %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ chapter.name }}</h6>
+                                <small class="text-muted">{{ chapter.quizzes|length }} quizzes</small>
+                            </div>
+                            <div class="d-flex justify-content-end gap-2">
+                                <button class="btn btn-sm action-btn action-btn-edit" data-bs-toggle="modal"
+                                    data-bs-target="#editChapterModal-{{ chapter.id }}">
+                                    <i class="bi bi-pencil"> Edit </i>
+                                </button>
+                                <a href="{{ url_for('add_quiz_form', chapter_id=chapter.id) }}"
+                                    class="btn btn-sm btn-outline-success">
+                                    <i class="bi bi-plus-lg"></i> Quiz
+                                </a>
+                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                    data-bs-target="#deleteChapterModal-{{ chapter.id }}">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No chapters added to this subject yet.</p>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                        data-bs-target="#addChapterModal-{{ subject.id }}">
+                        <i class="bi bi-plus-lg"></i> Add Chapter
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <small class="text-muted">
+                        Created: {{ subject.created_at.strftime('%Y-%m-%d') }}
+                        {% if subject.updated_at != subject.created_at %}
+                        | Last updated: {{ subject.updated_at.strftime('%Y-%m-%d') }}
+                        {% endif %}
+                    </small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+
+        {% if not subjects %}
+        <div class="col-12">
+            <div class="text-center py-5">
+                <i class="bi bi-journal-x display-1 text-muted mb-3"></i>
+                <h3 class="text-secondary">No subjects available</h3>
+                <p class="text-muted">Start by adding a new subject using the button above</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Add Subject Modal -->
+<div class="modal fade" id="addSubjectModal" tabindex="-1" aria-labelledby="addSubjectModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addSubjectModalLabel"><i class="bi bi-journal-plus"></i> Add New Subject
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('add_subject') }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="subject_name" class="form-label">Subject Name</label>
+                        <input type="text" class="form-control" id="subject_name" name="subject_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="subject_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="subject_description" name="subject_description"
+                            rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Subject Modals -->
+{% for subject in subjects %}
+<div class="modal fade" id="editSubjectModal-{{ subject.id }}" tabindex="-1"
+    aria-labelledby="editSubjectModalLabel-{{ subject.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editSubjectModalLabel-{{ subject.id }}"><i class="bi bi-pencil-square"></i>
+                    Edit Subject</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('edit_subject', subject_id=subject.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="subject_name" class="form-label">Subject Name</label>
+                        <input type="text" class="form-control" id="subject_name" name="subject_name"
+                            value="{{ subject.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="subject_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="subject_description" name="subject_description"
+                            rows="3">{{ subject.description }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Update Subject</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Add Chapter Modals -->
+{% for subject in subjects %}
+<div class="modal fade" id="addChapterModal-{{ subject.id }}" tabindex="-1"
+    aria-labelledby="addChapterModalLabel-{{ subject.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addChapterModalLabel-{{ subject.id }}"><i class="bi bi-journal-plus"></i>
+                    Add Chapter to {{ subject.name }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('add_chapter') }}" method="POST">
+                <div class="modal-body">
+                    <input type="hidden" name="subject_id" value="{{ subject.id }}">
+                    <div class="mb-3">
+                        <label for="chapter_name" class="form-label">Chapter Name</label>
+                        <input type="text" class="form-control" id="chapter_name" name="chapter_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="chapter_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="chapter_description" name="chapter_description"
+                            rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Chapter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Edit Chapter Modals -->
+{% for subject in subjects %}
+{% for chapter in subject.chapters %}
+<div class="modal fade" id="editChapterModal-{{ chapter.id }}" tabindex="-1"
+    aria-labelledby="editChapterModalLabel-{{ chapter.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editChapterModalLabel-{{ chapter.id }}"><i class="bi bi-pencil-square"></i>
+                    Edit Chapter</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('edit_chapter', chapter_id=chapter.id) }}" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="chapter_name" class="form-label">Chapter Name</label>
+                        <input type="text" class="form-control" id="chapter_name" name="chapter_name"
+                            value="{{ chapter.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="chapter_description" class="form-label">Description</label>
+                        <textarea class="form-control" id="chapter_description" name="chapter_description"
+                            rows="3">{{ chapter.description }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">Update Chapter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endfor %}
+
+<!-- Delete Confirmation Modals -->
+{% for subject in subjects %}
+<div class="modal fade" id="deleteSubjectModal-{{ subject.id }}" tabindex="-1"
+    aria-labelledby="deleteSubjectModalLabel-{{ subject.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteSubjectModalLabel-{{ subject.id }}"><i
+                        class="bi bi-exclamation-triangle"></i> Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong>{{ subject.name }}</strong>?</p>
+                <p class="text-danger"><i class="bi bi-exclamation-circle"></i> This will also delete all associated
+                    chapters and quizzes.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('delete_subject', subject_id=subject.id) }}" method="POST">
+                    <button type="submit" class="btn btn-danger">Delete Subject</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% for chapter in subject.chapters %}
+<div class="modal fade" id="deleteChapterModal-{{ chapter.id }}" tabindex="-1"
+    aria-labelledby="deleteChapterModalLabel-{{ chapter.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteChapterModalLabel-{{ chapter.id }}"><i
+                        class="bi bi-exclamation-triangle"></i> Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete chapter <strong>{{ chapter.name }}</strong>?</p>
+                <p class="text-danger"><i class="bi bi-exclamation-circle"></i> This will also delete all associated
+                    quizzes.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('delete_chapter', chapter_id=chapter.id) }}" method="POST">
+                    <button type="submit" class="btn btn-danger">Delete Chapter</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endfor %}
+{% endblock %}

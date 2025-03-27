@@ -1,0 +1,295 @@
+{% extends "base.html" %}
+{% block title %}Available Quizzes{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Available Quizzes</h1>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+            <i class="bi bi-speedometer2"></i> Back to Dashboard
+        </a>
+    </div>
+    
+    <!-- Filter Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-funnel"></i> Filter Quizzes</h5>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#filterCollapse" aria-expanded="false" aria-controls="filterCollapse">
+                    <i class="bi bi-sliders"></i> Toggle Filters
+                </button>
+            </div>
+        </div>
+        <div class="collapse" id="filterCollapse">
+            <div class="card-body">
+                <form action="{{ url_for('user_quizzes') }}" method="GET" id="filterForm">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label for="subject_filter" class="form-label">Subject</label>
+                            <select class="form-select" id="subject_filter" name="subject_id">
+                                <option value="" selected>All Subjects</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject.id }}" {% if request.args.get('subject_id')|int == subject.id %}selected{% endif %}>
+                                    {{ subject.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="chapter_filter" class="form-label">Chapter</label>
+                            <select class="form-select" id="chapter_filter" name="chapter_id">
+                                <option value="" selected>All Chapters</option>
+                                {% for subject in subjects %}
+                                    {% for chapter in subject.chapters %}
+                                    <option value="{{ chapter.id }}" 
+                                            data-subject="{{ subject.id }}"
+                                            {% if request.args.get('chapter_id')|int == chapter.id %}selected{% endif %}>
+                                        {{ chapter.name }} ({{ subject.name }})
+                                    </option>
+                                    {% endfor %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="status_filter" class="form-label">Status</label>
+                            <select class="form-select" id="status_filter" name="status">
+                                <option value="" selected>Any Status</option>
+                                <option value="upcoming" {% if request.args.get('status') == 'upcoming' %}selected{% endif %}>Upcoming</option>
+                                <option value="active" {% if request.args.get('status') == 'active' %}selected{% endif %}>Currently Available</option>
+                                <option value="expired" {% if request.args.get('status') == 'expired' %}selected{% endif %}>Expired</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="duration_filter" class="form-label">Duration</label>
+                            <select class="form-select" id="duration_filter" name="duration">
+                                <option value="" selected>Any Duration</option>
+                                <option value="0-15" {% if request.args.get('duration') == '0-15' %}selected{% endif %}>Short (< 15 min)</option>
+                                <option value="15-30" {% if request.args.get('duration') == '15-30' %}selected{% endif %}>Medium (15-30 min)</option>
+                                <option value="30+" {% if request.args.get('duration') == '30+' %}selected{% endif %}>Long (> 30 min)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="date_filter" class="form-label">Available On Date</label>
+                            <input type="date" class="form-control" id="date_filter" name="date" 
+                                   value="{{ request.args.get('date', '') }}">
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <label for="sort_by" class="form-label">Sort By</label>
+                            <select class="form-select" id="sort_by" name="sort_by">
+                                <option value="date_desc" {% if request.args.get('sort_by') == 'date_desc' or not request.args.get('sort_by') %}selected{% endif %}>Start Date (Newest First)</option>
+                                <option value="date_asc" {% if request.args.get('sort_by') == 'date_asc' %}selected{% endif %}>Start Date (Oldest First)</option>
+                                <option value="name_asc" {% if request.args.get('sort_by') == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+                                <option value="name_desc" {% if request.args.get('sort_by') == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+                                <option value="duration_asc" {% if request.args.get('sort_by') == 'duration_asc' %}selected{% endif %}>Duration (Shortest First)</option>
+                                <option value="duration_desc" {% if request.args.get('sort_by') == 'duration_desc' %}selected{% endif %}>Duration (Longest First)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="col-12 d-flex justify-content-end gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-funnel-fill"></i> Apply Filters
+                            </button>
+                            <a href="{{ url_for('user_quizzes') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Clear All Filters
+                            </a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quiz Count and Summary -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="text-muted mb-0">Showing <span class="fw-bold">{{ quizzes|length }}</span> quizzes</p>
+        {% if request.args %}
+        <a href="{{ url_for('user_quizzes') }}" class="btn btn-sm btn-outline-danger">
+            <i class="bi bi-x-circle"></i> Clear All Filters
+        </a>
+        {% endif %}
+    </div>
+    
+    <!-- Quiz Cards Grid -->
+    <div class="row g-4">
+        {% for quiz in quizzes %}
+        <div class="col-md-6">
+            <div class="card h-100 shadow-lg">
+                <!-- Card Header -->
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h3 class="card-title mb-0 fs-5">{{ quiz.name }}</h3>
+                    {% if now >= quiz.start_date %}
+                        {% if quiz.end_date and now > quiz.end_date %}
+                            <span class="badge bg-danger">Expired</span>
+                        {% else %}
+                            <span class="badge bg-success">Available Now</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="badge bg-warning text-dark">Coming soon</span>
+                    {% endif %}
+                </div>
+                
+                <!-- Card Body -->
+                <div class="card-body">
+                    <!-- Subject and Chapter Information -->
+                    <div class="d-flex align-items-center mb-3">
+                        {% if quiz.chapter and quiz.chapter.subject %}
+                        <span class="badge me-2" style="background-color: var(--primary-color);">
+                            {{ quiz.chapter.subject.name }}
+                        </span>
+                        <span class="badge" style="background-color: var(--secondary-color);">
+                            {{ quiz.chapter.name }}
+                        </span>
+                        {% elif quiz.chapter %}
+                        <span class="badge" style="background-color: var(--secondary-color);">
+                            {{ quiz.chapter.name }}
+                        </span>
+                        {% else %}
+                        <span class="badge bg-danger">No Chapter Assigned</span>
+                        {% endif %}
+                    </div>
+                    <p>{{ quiz.description }}</p>
+                    
+                    <!-- Quiz Meta Information -->
+                    <div class="mb-3">
+                        <p class="mb-2">
+                            <i class="bi bi-clock"></i> 
+                            <strong>Duration:</strong> {{ quiz.time_duration }} minutes
+                        </p>                        
+                        <p class="mb-2">
+                            <i class="bi bi-calendar3"></i>
+                            <strong>Start Date:</strong> {{ quiz.start_date.strftime('%Y-%m-%d') }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-calendar-check"></i>
+                            <strong>End Date:</strong> {{ quiz.end_date.strftime('%Y-%m-%d') if quiz.end_date else 'No Deadline' }}
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-award"></i>
+                            <strong>Passing Score:</strong> {{ quiz.passing_score }}%
+                        </p>
+                        <p class="mb-2">
+                            <i class="bi bi-arrow-repeat"></i> 
+                            <strong>Max Attempts:</strong> {{ quiz.max_attempts }}
+                        </p>
+                        
+                        <!-- User Attempt Information -->
+                        {% if quiz.id in user_attempts %}
+                            {% set attempt_info = user_attempts[quiz.id] %}
+                            <div class="alert alert-info p-2 mt-3 mb-0">
+                                <p class="mb-1">
+                                    <i class="bi bi-info-circle"></i> 
+                                    <strong>Your Attempts:</strong> {{ attempt_info.count }}/{{ quiz.max_attempts }}
+                                </p>
+                                {% if attempt_info.best_score is not none %}
+                                <p class="mb-1">
+                                    <i class="bi bi-star-fill"></i> 
+                                    <strong>Best Score:</strong> {{ "%.1f"|format(attempt_info.best_score) }}%
+                                    {% if attempt_info.best_score >= quiz.passing_score %}
+                                        <span class="badge bg-success">Passed</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Failed</span>
+                                    {% endif %}
+                                </p>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Card Footer with Actions -->
+                <div class="card-footer d-flex justify-content-between align-items-center">
+                    <a href="{{ url_for('view_quiz', quiz_id=quiz.id) }}" class="btn btn-sm action-btn action-btn-add">
+                        <i class="bi bi-eye"></i> View Details
+                    </a>
+                    
+                    {% if now >= quiz.start_date %}
+                        {% if quiz.end_date and now > quiz.end_date %}
+                            <span class="text-danger"><i class="bi bi-exclamation-circle"></i> Expired</span>
+                        {% else %}
+                            {% set user_attempt_count = user_attempts[quiz.id].count if quiz.id in user_attempts else 0 %}
+                            {% if user_attempt_count < quiz.max_attempts %}
+                                <form method="POST" action="{{ url_for('start_quiz', quiz_id=quiz.id) }}">
+                                    <button type="submit" class="btn btn-primary action-btn">
+                                        <i class="bi bi-play-circle"></i> Start Quiz
+                                    </button>
+                                </form>
+                            {% else %}
+                                <span class="text-warning"><i class="bi bi-exclamation-triangle"></i> No attempts left</span>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        <span class="text-warning"><i class="bi bi-clock"></i> Starts on {{ quiz.start_date.strftime('%d %b, %Y') }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Empty State -->
+    {% if not quizzes %}
+    <div class="text-center py-5">
+        <i class="bi bi-clipboard-x display-1 text-muted mb-3"></i>
+        <h3 class="text-secondary">No quizzes available</h3>
+        <p class="text-muted">
+            {% if request.args %}
+                No quizzes match the selected filters. <a href="{{ url_for('user_quizzes') }}">Clear all filters</a>
+            {% else %}
+                There are no quizzes available at the moment. Check back later!
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- JavaScript to handle dynamic chapter filtering based on subject selection -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const subjectFilter = document.getElementById('subject_filter');
+    const chapterFilter = document.getElementById('chapter_filter');
+    
+    function filterChapters() {
+        const selectedSubject = subjectFilter.value;
+        const chapterOptions = chapterFilter.querySelectorAll('option:not(:first-child)');
+        
+        if (selectedSubject === '') {
+            // Show all chapters if no subject is selected
+            chapterOptions.forEach(option => {
+                option.style.display = '';
+            });
+        } else {
+            // Show only chapters for the selected subject
+            chapterOptions.forEach(option => {
+                const subjectId = option.getAttribute('data-subject');
+                if (subjectId === selectedSubject) {
+                    option.style.display = '';
+                } else {
+                    option.style.display = 'none';
+                    // Unselect if hidden but was selected
+                    if (option.selected) {
+                        option.selected = false;
+                    }
+                }
+            });
+        }
+    }
+    
+    // Filter chapters on page load
+    filterChapters();
+    
+    // Filter chapters when subject selection changes
+    subjectFilter.addEventListener('change', function() {
+        filterChapters();
+        // Reset chapter selection to "All Chapters" when subject changes
+        chapterFilter.selectedIndex = 0;
+    });
+});
+</script>
+{% endblock %}
