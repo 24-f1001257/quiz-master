@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Summary{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Header Section -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="bi bi-bar-chart"></i> Admin Summary</h1>
+        <a href="{{ url_for('admin') }}" class="btn btn-outline-primary">
+            <i class="bi bi-speedometer2"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Subject-Wise Top Scores -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Subject-Wise Top Scores</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="subjectTopScoresChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Subject-Wise User Attempts -->
+        <div class="col-md-6">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Subject-Wise User Attempts</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="subjectUserAttemptsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quiz-Wise Top Scores -->
+    <div class="row g-4">
+        <div class="col-md-12">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-header">
+                    <h5 class="mb-0">Quiz-Wise Top Scores</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="quizTopScoresChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Subject-Wise Top Scores Chart
+        var ctx1 = document.getElementById("subjectTopScoresChart").getContext("2d");
+        new Chart(ctx1, {
+            type: "bar",
+            data: {
+                labels: JSON.parse('{{ stats.subject_names_json|safe }}'),
+                datasets: [{
+                    label: "Top Score",
+                    data: JSON.parse('{{ stats.subject_top_scores_json|safe }}'),
+                    backgroundColor: "rgba(75, 192, 192, 0.6)"
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: "#ffffff" // Brighter labels
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: "#ffffff" // Brighter labels
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: "#ffffff" // Brighter labels
+                        }
+                    }
+                }
+            }
+        });
+
+        // Subject-Wise User Attempts Chart
+        var ctx2 = document.getElementById("subjectUserAttemptsChart").getContext("2d");
+        new Chart(ctx2, {
+            type: "bar",
+            data: {
+                labels: JSON.parse('{{ stats.subject_attempts_names_json|safe }}'),
+                datasets: [{
+                    label: "User Attempts",
+                    data: JSON.parse('{{ stats.subject_attempts_data_json|safe }}'),
+                    backgroundColor: "rgba(255, 159, 64, 0.6)"
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: "#ffffff" // Brighter labels
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: "#ffffff" // Brighter labels
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: "#ffffff" // Brighter labels
+                        }
+                    }
+                }
+            }
+        });
+
+        // Quiz-Wise Top Scores Chart
+        var ctx3 = document.getElementById("quizTopScoresChart").getContext("2d");
+        new Chart(ctx3, {
+            type: "line",
+            data: {
+                labels: JSON.parse('{{ stats.quiz_names_json|safe }}'),
+                datasets: [{
+                    label: "Top Score",
+                    data: JSON.parse('{{ stats.quiz_top_scores_json|safe }}'),
+                    borderColor: "rgba(54, 162, 235, 1)",
+                    backgroundColor: "rgba(54, 162, 235, 0.2)",
+                    fill: true
+                }]
+            },
+            options: {
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: "#ffffff" // Brighter labels
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: "#ffffff" // Brighter labels
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: "#ffffff" // Brighter labels
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock %}

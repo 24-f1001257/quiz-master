@@ -33,19 +33,19 @@
                     </h3>
                     </a>
                     <div class="d-flex justify-content-end gap-2">
-                        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                        <button class="btn btn-sm action-btn action-btn-edit" data-bs-toggle="modal"
                             data-bs-target="#editSubjectModal-{{ subject.id }}">
-                            <i class="bi bi-pencil"></i>
+                            <i class="bi bi-pencil"></i> Edit
                         </button>
-                        <button class="btn btn-sm btn-outline-success" data-bs-toggle="modal"
+                        <button class="btn btn-sm action-btn action-btn-add" data-bs-toggle="modal"
                             data-bs-target="#addChapterModal-{{ subject.id }}">
                             <i class="bi bi-plus-lg"></i> Chapter
                         </button>
-                        <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                        <button class="btn btn-sm action-btn action-btn-delete" data-bs-toggle="modal"
                             data-bs-target="#deleteSubjectModal-{{ subject.id }}">
-                            <i class="bi bi-trash"></i>
+                            <i class="bi bi-trash"></i> Delete
                         </button>
-                    </div>
+                    </div>                    
                 </div>
                 <div class="card-body">
                     <p class="card-text">{{ subject.description or 'No description available.' }}</p>
@@ -62,17 +62,17 @@
                             <div class="d-flex justify-content-end gap-2">
                                 <button class="btn btn-sm action-btn action-btn-edit" data-bs-toggle="modal"
                                     data-bs-target="#editChapterModal-{{ chapter.id }}">
-                                    <i class="bi bi-pencil"> Edit </i>
+                                    <i class="bi bi-pencil"></i> Edit
                                 </button>
                                 <a href="{{ url_for('add_quiz_form', chapter_id=chapter.id) }}"
-                                    class="btn btn-sm btn-outline-success">
+                                    class="btn btn-sm action-btn action-btn-add">
                                     <i class="bi bi-plus-lg"></i> Quiz
                                 </a>
-                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal"
+                                <button class="btn btn-sm action-btn action-btn-delete" data-bs-toggle="modal"
                                     data-bs-target="#deleteChapterModal-{{ chapter.id }}">
-                                    <i class="bi bi-trash"></i>
+                                    <i class="bi bi-trash"></i> Delete
                                 </button>
-                            </div>
+                            </div>                            
                         </div>
                         {% endfor %}
                     </div>

@@ -62,12 +62,13 @@
                                                 data-bs-toggle="modal" 
                                                 data-bs-target="#deleteQuizModal-{{ quiz.id }}">
                                             <i class="bi bi-trash"></i>
+                                            Delete
                                         </button>
                                     </div>
                                 </div>
                                 <div class="card-body">
-                                    <p class="text-secondary">{{ quiz.description }}</p>
-                                    <div class="text-secondary mb-4">
+                                    <p class="text">{{ quiz.description }}</p>
+                                    <div class="mb-4">
                                         <p class="mb-2">
                                             <i class="bi bi-calendar3"></i> 
                                             <strong>Start Date:</strong> {{ quiz.start_date.strftime('%Y-%m-%d') }}

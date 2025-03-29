@@ -123,7 +123,7 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="mb-0">Recent Subjects</h3>
-                    <a href="{{ url_for('admin_subjects') }}" class="btn btn-sm btn-outline-primary">View All</a>
+                    <a href="{{ url_for('admin_subjects') }}" class="btn btn-sm action-btn action-btn-edit">View All</a>
                 </div>
                 <div class="card-body">
                     {% if recent_subjects %}
@@ -146,7 +146,7 @@
                     {% endif %}
                 </div>
                 <div class="card-footer">
-                    <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
+                    <button class="btn action-btn action-btn-edit w-100" data-bs-toggle="modal" data-bs-target="#addSubjectModal">
                         <i class="bi bi-plus-circle"></i> Add New Subject
                     </button>
                 </div>
@@ -156,7 +156,7 @@
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="mb-0">Recent Quizzes</h3>
-                    <a href="{{ url_for('allQuizzes') }}" class="btn btn-sm btn-outline-success">View All</a>
+                    <a href="{{ url_for('allQuizzes') }}" class="btn btn-sm action-btn action-btn-add">View All</a>
                 </div>
                 <div class="card-body">
                     {% if recent_quizzes %}
@@ -166,11 +166,12 @@
                             <div class="d-flex w-100 justify-content-between">
                                 <h5 class="mb-1">{{ quiz.name }}</h5>
                                 {% if quiz.is_active %}
-                                <span class="badge bg-success">Visible</span>
+                                    <span class="badge bg-primary">Visible</span>
                                 {% else %}
-                                <span class="badge bg-secondary">Not visible</span>
+                                    <span class="badge bg-secondary">Not visible</span>
                                 {% endif %}
                             </div>
+                            
                             <p class="mb-1 text-muted">{{ quiz.chapter.name }} ({{ quiz.chapter.subject.name }})</p>
                         </div>
                         {% endfor %}
@@ -180,7 +181,7 @@
                     {% endif %}
                 </div>
                 <div class="card-footer">
-                    <button class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#addQuizModal">
+                    <button class="btn action-btn action-btn-add w-100" data-bs-toggle="modal" data-bs-target="#addQuizModal">
                         <i class="bi bi-plus-circle"></i> Add New Quiz
                     </button>
                 </div>

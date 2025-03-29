@@ -85,7 +85,7 @@ def adminLogout():
     flash('Logged out successfully!', 'success')
     return redirect(url_for('login'))
 
-@app.route('/admin/add/subject', methods=['POST'])
+@app.route('/admin/subject/add', methods=['POST'])
 @admin_required
 def add_subject():
     subName = request.form.get('subject_name')
@@ -113,7 +113,7 @@ def add_subject():
     flash(f'{subName} added successfully!', 'success')
     return redirect(url_for('admin_subjects'))
 
-@app.route('/admin/edit/subject/<int:subject_id>', methods=['POST'])
+@app.route('/admin/subject/<int:subject_id>/edit', methods=['POST'])
 @admin_required
 def edit_subject(subject_id):
     subject = Subject.query.get_or_404(subject_id)
@@ -146,7 +146,7 @@ def edit_subject(subject_id):
     
     return redirect(url_for('admin'))
 
-@app.route('/admin/delete/subject/<int:subject_id>', methods=['POST'])
+@app.route('/admin/subject/<int:subject_id>/delete', methods=['POST'])
 @admin_required
 def delete_subject(subject_id):
     subject = Subject.query.get_or_404(subject_id)
@@ -191,7 +191,7 @@ def delete_subject(subject_id):
     return redirect(url_for('admin_subjects'))
 
 
-@app.route('/admin/add/chapter', methods=['POST'])
+@app.route('/admin/chapter/add', methods=['POST'])
 @admin_required
 def add_chapter():
     chapName = request.form.get('chapter_name')
@@ -240,7 +240,7 @@ def add_chapter():
     flash(f'{chapName} added successfully to {subject.name}!', 'success')
     return redirect(url_for('subject_quizzes', subject_id=subject_id))
 
-@app.route('/admin/delete/chapter/<int:chapter_id>', methods=['POST'])
+@app.route('/admin/chapter/<int:chapter_id>/delete', methods=['POST'])
 @admin_required
 def delete_chapter(chapter_id):
     chapter = Chapter.query.get_or_404(chapter_id)
@@ -281,7 +281,7 @@ def delete_chapter(chapter_id):
     # Redirect to the subject page if deleting from there, otherwise go to admin subjects
     return redirect(url_for('admin_subjects'))
 
-@app.route('/admin/edit/chapter/<int:chapter_id>', methods=['POST'])
+@app.route('/admin/chapter/<int:chapter_id>/edit', methods=['POST'])
 @admin_required
 def edit_chapter(chapter_id):
     chapter = Chapter.query.get_or_404(chapter_id)
@@ -538,7 +538,6 @@ def allQuizzes():
                          timezone=timezone,
                          now=now)
     
-
 @app.route('/admin/quiz/<int:quiz_id>/toggle-visibility', methods=['POST'])
 @admin_required
 def toggle_quiz_visibility(quiz_id):
@@ -581,7 +580,6 @@ def delete_question(question_id):
 @admin_required
 def add_quiz_questions(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
-    chapter = Chapter.query.get(quiz.chapter_id)
     
     if request.method == 'POST':
         question_text = request.form.get('question_text')
@@ -806,7 +804,7 @@ def add_user():
         
         return redirect(url_for('admin_users'))
 
-@app.route('/admin/users/edit/<int:user_id>', methods=['POST'])
+@app.route('/admin/users/<int:user_id>/edit', methods=['POST'])
 @admin_required
 def edit_user(user_id):
     user = User.query.get_or_404(user_id)
@@ -845,7 +843,7 @@ def edit_user(user_id):
         
         return redirect(url_for('admin_users'))
 
-@app.route('/admin/users/delete/<int:user_id>', methods=['POST'])
+@app.route('/admin/users/<int:user_id>/delete', methods=['POST'])
 @admin_required
 def delete_user(user_id):
     user = User.query.get_or_404(user_id)
@@ -946,4 +944,86 @@ def admin_search():
                           query=query,
                           search_type=search_type)
 
+@app.route('/admin/summary')
+@admin_required
+def admin_summary():
+    # Ensure the user is an admin
+    if 'admin_id' not in session:
+        flash('Unauthorized access!', 'danger')
+        return redirect(url_for('admin'))
+
+    # Get admin details
+    admin_id = session.get('admin_id')
+    admin = User.query.get_or_404(admin_id)
+
+    # Get subject-wise top scores
+    subject_top_scores = db.session.query(
+        Subject.name,
+        db.func.max(Score.total_scored).label('top_score')
+    ).join(
+        Chapter, Subject.id == Chapter.subject_id
+    ).join(
+        Quiz, Chapter.id == Quiz.chapter_id
+    ).join(
+        Score, Quiz.id == Score.quiz_id
+    ).group_by(
+        Subject.name
+    ).all()
+
+    # Format subject top scores for chart
+    subject_names = [s.name for s in subject_top_scores]
+    subject_top_scores_data = [float(s.top_score) if s.top_score else 0 for s in subject_top_scores]
+
+    # Get subject-wise user attempts
+    subject_user_attempts = db.session.query(
+        Subject.name,
+        db.func.count(QuizAttempt.id).label('attempts')
+    ).join(
+        Chapter, Subject.id == Chapter.subject_id
+    ).join(
+        Quiz, Chapter.id == Quiz.chapter_id
+    ).join(
+        QuizAttempt, Quiz.id == QuizAttempt.quiz_id
+    ).group_by(
+        Subject.name
+    ).all()
+
+    # Format subject user attempts for chart
+    subject_attempts_names = [s.name for s in subject_user_attempts]
+    subject_attempts_data = [s.attempts for s in subject_user_attempts]
+
+    # Get quiz-wise top scores
+    quiz_top_scores = db.session.query(
+        Quiz.name,
+        db.func.max(Score.total_scored).label('top_score')
+    ).join(
+        Score, Quiz.id == Score.quiz_id
+    ).group_by(
+        Quiz.name
+    ).all()
+
+    # Format quiz top scores for chart
+    quiz_names = [q.name for q in quiz_top_scores]
+    quiz_top_scores_data = [float(q.top_score) if q.top_score else 0 for q in quiz_top_scores]
+
+    # Prepare stats for the template
+    stats = {
+        'subject_names': subject_names,
+        'subject_top_scores': subject_top_scores_data,
+        'subject_attempts_names': subject_attempts_names,
+        'subject_attempts_data': subject_attempts_data,
+        'quiz_names': quiz_names,
+        'quiz_top_scores': quiz_top_scores_data
+    }
+
+    # Convert to JSON-safe data for the template
+    import json
+    stats['subject_names_json'] = json.dumps(subject_names)
+    stats['subject_top_scores_json'] = json.dumps(subject_top_scores_data)
+    stats['subject_attempts_names_json'] = json.dumps(subject_attempts_names)
+    stats['subject_attempts_data_json'] = json.dumps(subject_attempts_data)
+    stats['quiz_names_json'] = json.dumps(quiz_names)
+    stats['quiz_top_scores_json'] = json.dumps(quiz_top_scores_data)
+
+    return render_template('admin/admin_summary.html', admin=admin, stats=stats)
 

@@ -45,41 +45,11 @@
             </div>
         </div>
 
-        <!-- Right column - Stats and activity -->
+        <!-- Right column - activity -->
         <div class="col-lg-8">
-            <!-- User statistics -->
-            <div class="card shadow-lg mb-4">
-                <div class="card-header">
-                    <h3 class="mb-0"><i class="bi bi-bar-chart"></i> Quiz Statistics</h3>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <div class="card stat-card h-100 border-0 shadow">
-                                <div class="stat-value">{{ total_quizzes_completed }}</div>
-                                <div class="stat-label">Quizzes Completed</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card stat-card h-100 border-0 shadow">
-                                <div class="stat-value">{{ total_quizzes_passed }}</div>
-                                <div class="stat-label">Quizzes Passed</div>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="card stat-card h-100 border-0 shadow">
-                                <div class="stat-value">{{ "%.1f"|format(passing_rate) }}%</div>
-                                <div class="stat-label">Passing Rate</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recent activity -->
             <div class="card shadow-lg">
                 <div class="card-header">
-                    <h3 class="mb-0"><i class="bi bi-clock-history"></i> Recent Activity</h3>
+                    <h3 class="mb-0"><i class="bi bi-clock-history"></i> Activity</h3>
                 </div>
                 <div class="card-body">
                     {% if recent_activity %}

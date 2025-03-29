@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
+
 <head>
     {% block head %}
     <title>{% block title %}{% endblock %} - Quiz Master</title>
@@ -19,8 +20,12 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
         crossorigin="anonymous"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     {% block styles %}{% endblock %}
 </head>
+
 <body>
     {% set active_dashboard = active_dashboard|default(false) %}
     {% set active_subjects = active_subjects|default(false) %}
@@ -42,57 +47,75 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     {% if session.get('user_id') %}
                     <li class="nav-item">
-                        <a class="nav-link {% if active_dashboard %}active{% endif %}" href="{{ url_for('dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                        <a class="nav-link {% if active_dashboard %}active{% endif %}"
+                            href="{{ url_for('dashboard') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if active_quizzes %}active{% endif %}" href="{{ url_for('user_quizzes') }}"><i class="bi bi-list-check"></i> Quizzes</a>
+                        <a class="nav-link {% if active_quizzes %}active{% endif %}"
+                            href="{{ url_for('user_quizzes') }}"><i class="bi bi-list-check"></i> Quizzes</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if active_profile %}active{% endif %}" href="{{ url_for('user_profile') }}"><i class="bi bi-person"></i> Profile</a>
+                        <a class="nav-link {% if active_profile %}active{% endif %}"
+                            href="{{ url_for('user_profile') }}"><i class="bi bi-person"></i> Profile</a>
                     </li>
-                    <!-- <li class="nav-item">
-                        <a class="nav-link {% if active_summary %}active{% endif %}" href="{{ url_for('user_summary') }}"><i class="bi bi-graph-up"></i> Summary</a>
-                    </li> -->
                     <li class="nav-item">
-                        <a class="nav-link active text-danger" href="{{ url_for('logout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a> 
+                        <a class="nav-link {% if active_summary %}active{% endif %}"
+                            href="{{ url_for('user_summary') }}"><i class="bi bi-graph-up"></i> Summary</a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link active text-danger" href="{{ url_for('logout') }}"><i
+                                class="bi bi-box-arrow-right"></i> Logout</a>
                     </li>
                     {% elif session.get('admin_id') %}
                     <li class="nav-item">
-                        <a class="nav-link {% if active_dashboard %}active{% endif %}" href="{{ url_for('admin') }}"><i class="bi bi-speedometer2"></i> Dashboard</a>
+                        <a class="nav-link {% if active_dashboard %}active{% endif %}" href="{{ url_for('admin') }}"><i
+                                class="bi bi-speedometer2"></i> Dashboard</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if active_subjects %}active{% endif %}" href="{{ url_for('admin_subjects') }}"><i class="bi bi-journal-bookmark"></i> Subjects</a>
+                        <a class="nav-link {% if active_subjects %}active{% endif %}"
+                            href="{{ url_for('admin_subjects') }}"><i class="bi bi-journal-bookmark"></i> Subjects</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if active_quizzes %}active{% endif %}" href="{{ url_for('allQuizzes') }}"><i class="bi bi-clipboard2-check"></i> Quizzes</a>
+                        <a class="nav-link {% if active_quizzes %}active{% endif %}"
+                            href="{{ url_for('allQuizzes') }}"><i class="bi bi-clipboard2-check"></i> Quizzes</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if active_users %}active{% endif %}" href="{{ url_for('admin_users') }}"><i class="bi bi-people"></i> Users</a>
+                        <a class="nav-link {% if active_users %}active{% endif %}"
+                            href="{{ url_for('admin_users') }}"><i class="bi bi-people"></i> Users</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link active text-danger" href="{{ url_for('adminLogout') }}"><i class="bi bi-box-arrow-right"></i> Logout</a>
+                        <a class="nav-link active text-danger" href="{{ url_for('adminLogout') }}"><i
+                                class="bi bi-box-arrow-right"></i> Logout</a>
                     </li>
                     {% else %}
                     <li class="nav-item">
-                        <a class="nav-link {% if active_login %}active{% endif %}" href="{{ url_for('login') }}"><i class="bi bi-box-arrow-in-right"></i> Login</a>
+                        <a class="nav-link {% if active_login %}active{% endif %}" href="{{ url_for('login') }}"><i
+                                class="bi bi-box-arrow-in-right"></i> Login</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if active_signup %}active{% endif %}" href="{{ url_for('signup') }}"><i class="bi bi-person-plus"></i> Signup</a>
+                        <a class="nav-link {% if active_signup %}active{% endif %}" href="{{ url_for('signup') }}"><i
+                                class="bi bi-person-plus"></i> Signup</a>
                     </li>
                     {% endif %}
                 </ul>
                 {% if session.get('user_id') %}
                 <form class="d-flex ms-auto" action="{{ url_for('user_search') }}" method="GET">
                     <div class="input-group">
-                        <input class="form-control" type="search" name="q" placeholder="Search..." aria-label="Search" style="max-width: 250px;">
-                        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search text-white"></i></button>
+                        <input class="form-control" type="search" name="q" placeholder="Search..." aria-label="Search"
+                            style="max-width: 250px;">
+                        <button class="btn btn-outline-secondary" type="submit"><i
+                                class="bi bi-search text-white"></i></button>
                     </div>
                 </form>
                 {% elif session.get('admin_id') %}
                 <form class="d-flex ms-auto" action="{{ url_for('admin_search') }}" method="GET">
                     <div class="input-group">
-                        <input class="form-control" type="search" name="q" placeholder="Search users, quizzes, subjects..." aria-label="Search" style="max-width: 250px;">
-                        <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search text-white"></i></button>
+                        <input class="form-control" type="search" name="q"
+                            placeholder="Search users, quizzes, subjects..." aria-label="Search"
+                            style="max-width: 250px;">
+                        <button class="btn btn-outline-secondary" type="submit"><i
+                                class="bi bi-search text-white"></i></button>
                     </div>
                 </form>
                 {% endif %}

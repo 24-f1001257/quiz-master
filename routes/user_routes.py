@@ -493,7 +493,6 @@ def quiz_review(quiz_id, score_id):
                          score=score,
                          user_responses=user_responses)
 
-
 @app.route('/search')
 @login_required
 def user_search():
@@ -569,15 +568,8 @@ def user_profile():
     user_id = session.get('user_id')
     user = User.query.get_or_404(user_id)
     
-    # Get additional user statistics for profile
-    total_quizzes_completed = db.session.query(db.func.count(Score.id)).filter_by(user_id=user_id, is_completed=True).scalar() or 0
-    total_quizzes_passed = db.session.query(db.func.count(Score.id)).filter_by(user_id=user_id, passed=True).scalar() or 0
-    passing_rate = (total_quizzes_passed / total_quizzes_completed * 100) if total_quizzes_completed > 0 else 0
+    recent_activity = QuizAttempt.query.filter_by(user_id=user_id).order_by(QuizAttempt.start_time.desc()).all()
     
-    # Get recent activity (last 5 quiz attempts)
-    recent_activity = QuizAttempt.query.filter_by(user_id=user_id).order_by(QuizAttempt.start_time.desc()).limit(5).all()
-    
-    # Enrich recent activity with quiz details
     for activity in recent_activity:
         activity.quiz = Quiz.query.get(activity.quiz_id)
         if activity.status == 'completed':
@@ -588,10 +580,7 @@ def user_profile():
             ).first()
     
     return render_template('user/user_profile.html', 
-                          user=user, 
-                          total_quizzes_completed=total_quizzes_completed,
-                          total_quizzes_passed=total_quizzes_passed,
-                          passing_rate=passing_rate,
+                          user=user,
                           recent_activity=recent_activity,
                           datetime=datetime,
                           timezone=timezone)
