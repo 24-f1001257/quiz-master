@@ -4,9 +4,17 @@
     {{ quiz.name }} | Quiz Preview
 {% endblock %}
 
+{% set active_dashboard = false %}
+{% set active_subjects = false %}
+{% set active_quizzes = true %}
+{% set active_users = false %}
+{% set active_login = false %}
+{% set active_signup = false %}
+{% set active_profile = false %}
+
 {% block content %}
 <div class="container mt-4">
-    <!-- Breadcrumbs -->
+
     <nav aria-label="breadcrumb">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
@@ -28,7 +36,7 @@
             {% endif %}
         </div>
         <div class="card-body">
-            <!-- Quiz details -->
+
             <div class="row mb-4">
                 <div class="col-md-8">
                     <h3 class="mb-3">Quiz Details</h3>
@@ -51,6 +59,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="col-md-4">
                     <div class="card border-info mb-3">
                         <div class="card-header bg-info text-white">Your Statistics</div>
@@ -71,7 +80,6 @@
                 </div>
             </div>
             
-            <!-- Quiz rules -->
             <div class="alert alert-info">
                 <h4><i class="bi bi-info-circle"></i> Quiz Rules</h4>
                 <ul>
@@ -82,7 +90,6 @@
                 </ul>
             </div>
             
-            <!-- Action buttons -->
             <div class="d-flex justify-content-center mt-4">
                 <a href="{{ url_for('dashboard') }}" class="btn btn-secondary me-2">
                     <i class="bi bi-arrow-left"></i> Back to Dashboard

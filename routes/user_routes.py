@@ -12,7 +12,7 @@ def to_home():
 
 @app.route('/home')
 def home():
-    return render_template('user/user_home.html')
+    return render_template('home.html')
 
 @app.errorhandler(404)
 def page_not_found(e):
@@ -62,7 +62,7 @@ def login():
         
         flash('Invalid email or password!', 'danger')
     
-    return render_template('user/user_login.html')
+    return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -119,7 +119,7 @@ def signup():
             flash('Error during registration!', 'danger')
             return redirect(url_for('signup'))
 
-    return render_template('user/user_signup.html', datetime=datetime, timezone=timezone)
+    return render_template('signup.html', datetime=datetime, timezone=timezone)
 
 @app.route('/logout')
 @login_required
@@ -136,7 +136,7 @@ def dashboard():
     now = datetime.now(timezone.utc)
     
     subjects = Subject.query.all()
-    subject_quiz_counts = {}  # Dictionary to store active quiz counts by subject
+    subject_quiz_counts = {}
     
     for subject in subjects:
         subject.chapters = Chapter.query.filter_by(subject_id=subject.id).all()
@@ -145,7 +145,6 @@ def dashboard():
         for chapter in subject.chapters:
             chapter.quizzes = Quiz.query.filter_by(chapter_id=chapter.id).all()
             
-            # Ensure all quiz dates are timezone-aware
             for quiz in chapter.quizzes:
                 if quiz.start_date and quiz.start_date.tzinfo is None:
                     db.session.query(Quiz).filter_by(id=quiz.id).update({
@@ -156,32 +155,25 @@ def dashboard():
                         'end_date': quiz.end_date.replace(tzinfo=timezone.utc)
                     })
                 
-                # Count active quizzes for this subject
                 if quiz.is_active:
                     active_quiz_count += 1
             
-            # Commit changes if any dates were updated
             if any(quiz.start_date.tzinfo is None for quiz in chapter.quizzes if quiz.start_date) or \
                any(quiz.end_date.tzinfo is None for quiz in chapter.quizzes if quiz.end_date):
                 db.session.commit()
-                # Refresh quizzes after committing changes
                 chapter.quizzes = Quiz.query.filter_by(chapter_id=chapter.id).all()
         
-        # Store the active quiz count for this subject
         subject_quiz_counts[subject.id] = active_quiz_count
     
-    # Get user quiz statistics
     highest_score = db.session.query(db.func.max(Score.total_scored)).filter_by(user_id=user_id).scalar()
     average_score = db.session.query(db.func.avg(Score.total_scored)).filter_by(user_id=user_id).scalar()
     total_quizzes = QuizAttempt.query.filter_by(user_id=user_id).count()
     
-    # Get recent quiz attempts for the charts
     recent_scores = Score.query.filter_by(user_id=user_id)\
         .order_by(Score.created_at.desc())\
         .limit(5)\
         .all()
     
-    # Format the data for the chart
     recent_attempts = []
     for score in recent_scores:
         quiz = Quiz.query.get(score.quiz_id)
@@ -201,11 +193,9 @@ def dashboard():
         'recent_attempts': recent_attempts
     }
     
-    # Convert to JSON-safe data for the template
     import json
     stats['recent_attempts'] = json.dumps(recent_attempts)
     
-    # Pass datetime and timezone modules to the template
     return render_template('user/user_dashboard.html', 
                           subjects=subjects, 
                           user=user, 
@@ -224,7 +214,6 @@ def view_quiz(quiz_id):
     
     quiz = Quiz.query.get_or_404(quiz_id)
     
-    # Handle timezone for dates
     if quiz.start_date and quiz.start_date.tzinfo is None:
         db.session.query(Quiz).filter_by(id=quiz_id).update({
             'start_date': quiz.start_date.replace(tzinfo=timezone.utc)
@@ -234,26 +223,20 @@ def view_quiz(quiz_id):
             'end_date': quiz.end_date.replace(tzinfo=timezone.utc)
         })
     
-    # Commit any timezone updates and refresh the quiz object
     if quiz.start_date.tzinfo is None or (quiz.end_date and quiz.end_date.tzinfo is None):
         db.session.commit()
-        quiz = Quiz.query.get(quiz_id)  # Refresh the quiz object
+        quiz = Quiz.query.get(quiz_id)
     
-    # Get quiz chapter and subject for breadcrumb navigation
     chapter = Chapter.query.get(quiz.chapter_id)
     subject = Subject.query.get(chapter.subject_id)
     
-    # Get the number of questions in the quiz
     question_count = Question.query.filter_by(quiz_id=quiz_id).count()
     
-    # Check if user has any attempts for this quiz
     attempts = QuizAttempt.query.filter_by(user_id=user_id, quiz_id=quiz_id).count()
     
-    # Get user's best score for this quiz if they've taken it
     best_score = db.session.query(db.func.max(Score.total_scored))\
                 .filter_by(user_id=user_id, quiz_id=quiz_id).scalar()
     
-    # Convert dates to UTC for status comparison
     start_date_aware = quiz.start_date.astimezone(timezone.utc)
     end_date_aware = quiz.end_date.astimezone(timezone.utc) if quiz.end_date else None
     
@@ -284,12 +267,10 @@ def start_quiz(quiz_id):
     quiz = Quiz.query.get_or_404(quiz_id)
     now = datetime.now(timezone.utc)
 
-    # Check if quiz is active and available
     if not quiz.is_active:
         flash('This quiz is not currently available.', 'error')
         return redirect(url_for('view_quiz', quiz_id=quiz_id))
 
-    # Ensure dates are timezone-aware
     if quiz.start_date.tzinfo is None:
         db.session.query(Quiz).filter_by(id=quiz_id).update({
             'start_date': quiz.start_date.replace(tzinfo=timezone.utc)
@@ -302,9 +283,8 @@ def start_quiz(quiz_id):
     
     if any([quiz.start_date.tzinfo is None, quiz.end_date and quiz.end_date.tzinfo is None]):
         db.session.commit()
-        quiz = Quiz.query.get(quiz_id)  # Refresh the quiz object
+        quiz = Quiz.query.get(quiz_id)
 
-    # Now both dates should be timezone-aware for comparison
     if quiz.start_date > now:
         flash('This quiz has not started yet.', 'error')
         return redirect(url_for('view_quiz', quiz_id=quiz_id))
@@ -313,13 +293,11 @@ def start_quiz(quiz_id):
         flash('This quiz has expired.', 'error')
         return redirect(url_for('view_quiz', quiz_id=quiz_id))
     
-    # Check attempts
     attempts = QuizAttempt.query.filter_by(user_id=user_id, quiz_id=quiz_id).count()
     if attempts >= quiz.max_attempts:
         flash('You have used all your attempts for this quiz.', 'error')
         return redirect(url_for('view_quiz', quiz_id=quiz_id))
     
-    # Check if user has any ongoing attempt
     ongoing_attempt = QuizAttempt.query.filter_by(
         user_id=user_id, 
         quiz_id=quiz_id, 
@@ -343,12 +321,10 @@ def start_quiz(quiz_id):
                                 attempt_number=ongoing_attempt.attempt_number,
                                 time_remaining=time_remaining)
         else:
-            # Auto-submit expired attempt
             ongoing_attempt.status = 'expired'
             ongoing_attempt.end_time = now
             db.session.commit()
     
-    # Create new attempt
     attempt_number = attempts + 1
     new_attempt = QuizAttempt(
         user_id=user_id,
@@ -360,11 +336,9 @@ def start_quiz(quiz_id):
     db.session.add(new_attempt)
     db.session.commit()
     
-    # Get randomized questions
     questions = Question.query.filter_by(quiz_id=quiz_id).order_by(func.random()).all()
     
-    # Start with full time duration for new attempt
-    time_remaining = quiz.time_duration * 60  # Convert to seconds
+    time_remaining = quiz.time_duration * 60
     
     return render_template('user/user_quiz_take.html', 
                          quiz=quiz, 
@@ -380,7 +354,6 @@ def submit_quiz(quiz_id):
     
     quiz = Quiz.query.get_or_404(quiz_id)
     
-    # Get the ongoing attempt
     attempt = QuizAttempt.query.filter_by(
         user_id=user_id,
         quiz_id=quiz_id,
@@ -391,13 +364,11 @@ def submit_quiz(quiz_id):
         flash('No active quiz attempt found.', 'error')
         return redirect(url_for('view_quiz', quiz_id=quiz_id))
     
-    # Ensure attempt start_time is timezone-aware and in UTC
     if attempt.start_time.tzinfo is None:
         attempt.start_time = attempt.start_time.replace(tzinfo=timezone.utc)
     
     start_time_aware = attempt.start_time.astimezone(timezone.utc)
     
-    # Check if the quiz time has expired using timezone-aware comparison
     elapsed_time = (now - start_time_aware).total_seconds() / 60
     if elapsed_time > quiz.time_duration:
         attempt.status = 'expired'
@@ -409,7 +380,6 @@ def submit_quiz(quiz_id):
     total_points = 0
     earned_points = 0
     
-    # Process responses
     questions = Question.query.filter_by(quiz_id=quiz_id).all()
     for question in questions:
         selected_option_id = request.form.get(f'question_{question.id}')
@@ -424,7 +394,7 @@ def submit_quiz(quiz_id):
             question_id=question.id,
             selected_option_id=selected_option_id,
             is_correct=selected_option.is_correct,
-            created_at=now  # Ensure created_at is timezone-aware
+            created_at=now
         )
         
         if selected_option.is_correct:
@@ -432,20 +402,17 @@ def submit_quiz(quiz_id):
         
         db.session.add(user_response)
     
-    # Calculate score percentage
     score_percentage = (earned_points / total_points * 100) if total_points > 0 else 0
     passed = score_percentage >= quiz.passing_score
     
-    # Update attempt status with timezone-aware end time
     attempt.status = 'completed'
     attempt.end_time = now
     
-    # Create score record with timezone-aware timestamps
     score = Score(
         total_scored=score_percentage,
         is_completed=True,
         passed=passed,
-        start_time=attempt.start_time,  # Already made timezone-aware above
+        start_time=attempt.start_time,
         end_time=now,
         attempt_number=attempt.attempt_number,
         user_id=user_id,
@@ -466,25 +433,21 @@ def quiz_review(quiz_id, score_id):
     quiz = Quiz.query.get_or_404(quiz_id)
     score = Score.query.get_or_404(score_id)
     
-    # Ensure the user can only view their own quiz results
     if score.user_id != user_id:
         flash('You are not authorized to view these results.', 'error')
         return redirect(url_for('dashboard'))
     
-    # Get the quiz attempt associated with this score
     attempt = QuizAttempt.query.filter_by(
         user_id=user_id,
         quiz_id=quiz_id,
         attempt_number=score.attempt_number
     ).first_or_404()
     
-    # Get all user responses for this attempt with related questions and options
     user_responses = UserResponse.query\
         .filter_by(quiz_attempt_id=attempt.id)\
         .join(Question)\
         .all()
     
-    # Load all options for each question to show correct answers
     for response in user_responses:
         response.question.options = Option.query.filter_by(question_id=response.question_id).all()
     
@@ -506,7 +469,6 @@ def user_search():
                               query='',
                               user=user)
     
-    # Use a percentage wildcard for LIKE queries
     search_term = f"%{query}%"
     
     results = {
@@ -515,7 +477,6 @@ def user_search():
         'quizzes': []
     }
     
-    # Search for subjects
     subjects = Subject.query.filter(
         db.or_(
             Subject.name.ilike(search_term),
@@ -524,7 +485,6 @@ def user_search():
     ).all()
     results['subjects'] = subjects
     
-    # Search for chapters
     chapters = Chapter.query.filter(
         db.or_(
             Chapter.name.ilike(search_term),
@@ -532,13 +492,11 @@ def user_search():
         )
     ).join(Subject).all()
     
-    # Load the subject for each chapter
     for chapter in chapters:
         chapter.subject = Subject.query.get(chapter.subject_id)
     
     results['chapters'] = chapters
     
-    # Search for quizzes, but only active ones
     quizzes = Quiz.query.filter(
         db.and_(
             Quiz.is_active == True,
@@ -549,7 +507,6 @@ def user_search():
         )
     ).all()
     
-    # Load the chapter and subject for each quiz
     for quiz in quizzes:
         quiz.chapter = Chapter.query.get(quiz.chapter_id)
         if quiz.chapter:
@@ -600,17 +557,14 @@ def edit_profile():
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
         
-        # Validate required fields
         if not fullName or not email:
             flash('Name and email are required fields.', 'danger')
             return redirect(url_for('edit_profile'))
         
-        # Check if email is being changed and if it already exists for another user
         if email != user.email and User.query.filter_by(email=email).first():
             flash('Email already registered to another account.', 'danger')
             return redirect(url_for('edit_profile'))
         
-        # Process date of birth if provided
         dob_datetime = user.dob
         if dob:
             try:
@@ -620,25 +574,20 @@ def edit_profile():
                 flash('Invalid date format.', 'danger')
                 return redirect(url_for('edit_profile'))
         
-        # Update user details
         user.fullName = fullName
         user.email = email
         user.qualification = qualification
         user.dob = dob_datetime
         
-        # Handle password change if requested
         if new_password:
-            # Verify current password before allowing change
             if not check_password_hash(user.password, current_password):
                 flash('Current password is incorrect.', 'danger')
                 return redirect(url_for('edit_profile'))
             
-            # Validate new password
             if new_password != confirm_password:
                 flash('New passwords do not match.', 'danger')
                 return redirect(url_for('edit_profile'))
             
-            # Update password
             user.password = generate_password_hash(new_password)
             flash('Password updated successfully.', 'success')
         
@@ -651,7 +600,6 @@ def edit_profile():
             flash('Error updating profile.', 'danger')
             return redirect(url_for('edit_profile'))
     
-    # Format date for the HTML date input
     formatted_dob = user.dob.strftime('%Y-%m-%d') if user.dob else None
     
     return render_template('user/user_edit_profile.html', 
@@ -664,7 +612,6 @@ def user_summary():
     user_id = session.get('user_id')
     user = User.query.get_or_404(user_id)
     
-    # Get user quiz statistics
     highest_score = db.session.query(db.func.max(Score.total_scored)).filter_by(user_id=user_id).scalar()
     average_score = db.session.query(db.func.avg(Score.total_scored)).filter_by(user_id=user_id).scalar()
     total_quizzes = QuizAttempt.query.filter_by(user_id=user_id).count()
@@ -672,7 +619,6 @@ def user_summary():
     total_quizzes_passed = db.session.query(db.func.count(Score.id)).filter_by(user_id=user_id, passed=True).scalar() or 0
     passing_rate = (total_quizzes_passed / total_quizzes_completed * 100) if total_quizzes_completed > 0 else 0
     
-    # Get quiz attempts by subject
     subject_stats = db.session.query(
         Subject.name, 
         db.func.count(Score.id).label('attempts'),
@@ -689,18 +635,15 @@ def user_summary():
         Subject.name
     ).all()
     
-    # Format subject stats for chart
     subject_names = [s.name for s in subject_stats]
     subject_attempts = [s.attempts for s in subject_stats]
     subject_avg_scores = [float(s.avg_score) if s.avg_score else 0 for s in subject_stats]
     
-    # Get recent quiz attempts for the charts
     recent_scores = Score.query.filter_by(user_id=user_id)\
         .order_by(Score.created_at.desc())\
         .limit(10)\
         .all()
     
-    # Format the data for the chart
     recent_attempts = []
     for score in recent_scores:
         quiz = Quiz.query.get(score.quiz_id)
@@ -713,7 +656,6 @@ def user_summary():
                 'date': score.created_at.strftime('%Y-%m-%d')
             })
     
-    # Get performance over time (monthly)
     monthly_performance = db.session.query(
         db.func.strftime('%Y-%m', Score.created_at).label('month'),
         db.func.avg(Score.total_scored).label('avg_score'),
@@ -726,7 +668,6 @@ def user_summary():
         'month'
     ).all()
     
-    # Format monthly performance data
     months = [p.month for p in monthly_performance]
     monthly_avg_scores = [float(p.avg_score) if p.avg_score else 0 for p in monthly_performance]
     monthly_counts = [p.count for p in monthly_performance]
@@ -747,7 +688,6 @@ def user_summary():
         'monthly_counts': monthly_counts
     }
     
-    # Convert to JSON-safe data for the template
     import json
     stats['recent_attempts_json'] = json.dumps(recent_attempts)
     stats['subject_names_json'] = json.dumps(subject_names)
@@ -764,7 +704,6 @@ def user_summary():
 @app.route('/quizzes')
 @login_required
 def user_quizzes():
-    # Get filter parameters
     subject_id = request.args.get('subject_id')
     chapter_id = request.args.get('chapter_id')
     date_filter = request.args.get('date')
@@ -775,19 +714,16 @@ def user_quizzes():
     
     query = Quiz.query.filter(Quiz.is_active == True)
     
-    # Apply filters - explicitly convert to integers and handle potential errors
     if subject_id and subject_id != '':
         try:
             subject_id = int(subject_id)
             chapters = Chapter.query.filter_by(subject_id=subject_id).all()
             chapter_ids = [chapter.id for chapter in chapters]
-            if chapter_ids:  # Only apply filter if there are chapters
+            if chapter_ids:
                 query = query.filter(Quiz.chapter_id.in_(chapter_ids))
-                # Get the subject for breadcrumb navigation
                 selected_subject = Subject.query.get(subject_id)
                 app.logger.info(f"Filtering by subject_id {subject_id}, chapter_ids: {chapter_ids}")
             else:
-                # No chapters found for this subject, so there won't be any quizzes
                 selected_subject = Subject.query.get(subject_id)
                 quizzes = []
                 return render_template('user/user_quiz_list.html', 
@@ -805,7 +741,6 @@ def user_quizzes():
     else:
         selected_subject = None
     
-    # Direct filter by chapter if specified
     if chapter_id and chapter_id != '':
         try:
             chapter_id = int(chapter_id)
@@ -815,9 +750,7 @@ def user_quizzes():
                 selected_chapter = chapter
                 app.logger.info(f"Filtering by chapter_id {chapter_id}")
                 
-                # Check if there are any quizzes for this chapter
                 if Quiz.query.filter_by(chapter_id=chapter_id).count() == 0:
-                    # Early return if no quizzes for this chapter
                     selected_subject = Subject.query.get(chapter.subject_id) if chapter else None
                     subjects = Subject.query.all()
                     chapters = Chapter.query.filter_by(subject_id=selected_subject.id).all() if selected_subject else []
@@ -841,12 +774,10 @@ def user_quizzes():
     
     if date_filter and date_filter != '':
         try:
-            # Convert the filter date to a timezone-aware datetime at the start of the day
             filter_date = datetime.strptime(date_filter, '%Y-%m-%d')
             filter_date = filter_date.replace(tzinfo=timezone.utc)
             filter_date_end = filter_date.replace(hour=23, minute=59, second=59)
             
-            # Filter quizzes that start on the selected date
             query = query.filter(Quiz.start_date >= filter_date, Quiz.start_date <= filter_date_end)
             app.logger.info(f"Filtering by date: {date_filter}")
         except ValueError:
@@ -864,7 +795,6 @@ def user_quizzes():
             query = query.filter(Quiz.time_duration > 30)
             app.logger.info("Filtering: duration > 30 minutes")
     
-    # Apply sorting
     if sort_by == 'date_desc':
         query = query.order_by(Quiz.start_date.desc())
     elif sort_by == 'date_asc':
@@ -881,7 +811,6 @@ def user_quizzes():
     quizzes = query.all()
     app.logger.info(f"Query returned {len(quizzes)} quizzes")
     
-    # Ensure all quiz dates are timezone-aware
     for quiz in quizzes:
         if quiz.start_date and quiz.start_date.tzinfo is None:
             db.session.query(Quiz).filter_by(id=quiz.id).update({
@@ -892,22 +821,18 @@ def user_quizzes():
                 'end_date': quiz.end_date.replace(tzinfo=timezone.utc)
             })
     
-    # Commit any timezone updates and refresh quizzes
     if quizzes and (any(quiz.start_date.tzinfo is None for quiz in quizzes if quiz.start_date) or 
        any(quiz.end_date.tzinfo is None for quiz in quizzes if quiz.end_date)):
         db.session.commit()
-        quizzes = query.all()  # Refresh the quiz objects
+        quizzes = query.all()
     
-    # Get all subjects for the filter dropdown
     subjects = Subject.query.all()
     
-    # If filtering by subject, get chapters of that subject for the chapter filter dropdown
     if selected_subject:
         chapters = Chapter.query.filter_by(subject_id=selected_subject.id).all()
     else:
         chapters = []
     
-    # Get user's attempts for these quizzes
     user_id = session.get('user_id')
     user_attempts = {}
     

@@ -2,12 +2,21 @@
 
 {% block title %}Quiz: {{ quiz.name }}{% endblock %}
 
+{% set active_dashboard = false %}
+{% set active_subjects = false %}
+{% set active_quizzes = true %}
+{% set active_users = false %}
+{% set active_login = false %}
+{% set active_signup = false %}
+{% set active_profile = false %}
+
 {% block content %}
 <div class="container py-5">
     <div class="row">
-        <!-- Quiz Header -->
+
         <div class="col-12 mb-4">
             <div class="card shadow-sm">
+
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h3 class="mb-0">{{ quiz.name }}</h3>
                     <div class="d-flex align-items-center">
@@ -19,6 +28,7 @@
                         </span>
                     </div>
                 </div>
+
                 <div class="card-body">
                     <p class="mb-2">{{ quiz.description }}</p>
                     <div class="d-flex flex-wrap">
@@ -27,11 +37,13 @@
                         <span class="badge bg-secondary me-2 mb-2">Attempt {{ attempt_number }} of {{ quiz.max_attempts }}</span>
                     </div>
                 </div>
+
             </div>
         </div>
+
     </div>
 
-    <!-- Quiz Form -->
+
     <form id="quiz-form" method="POST" action="{{ url_for('submit_quiz', quiz_id=quiz.id) }}">
         {% for question in questions %}
         <div class="row mb-4">
@@ -90,10 +102,8 @@
     </div>
 </div>
 
-<!-- JavaScript for Timer only -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Timer functionality
     let timeRemaining = "{{ time_remaining }}";
     const timerElement = document.getElementById('timer');
     const quizForm = document.getElementById('quiz-form');

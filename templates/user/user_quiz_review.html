@@ -1,8 +1,17 @@
 {% extends "base.html" %}
 
+{% set active_dashboard = false %}
+{% set active_subjects = false %}
+{% set active_quizzes = true %}
+{% set active_users = false %}
+{% set active_login = false %}
+{% set active_signup = false %}
+{% set active_profile = false %}
+
 {% block content %}
 <div class="container mt-4">
     <div class="card mb-4">
+        
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
             <h3 class="mb-0">Quiz Results - {{ quiz.name }}</h3>
             <div>
@@ -10,6 +19,7 @@
                 <small class="text-white">{{ "Passed" if score.passed else "Failed" }}</small>
             </div>
         </div>
+
         <div class="card-body">
             <div class="row mb-3">
                 <div class="col">

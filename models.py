@@ -9,7 +9,7 @@ class User(db.Model):
     password = db.Column(db.String(256), nullable=False)
     fullName = db.Column(db.String(50))
     qualification = db.Column(db.String(50))
-    dob = db.Column(db.DateTime)  # Changed from String to DateTime
+    dob = db.Column(db.DateTime)
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     
     quiz_attempts = db.relationship('QuizAttempt', backref='user', lazy=True)
@@ -38,9 +38,9 @@ class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
-    start_date = db.Column(db.DateTime(timezone=True), nullable=False)  # Explicitly set timezone=True
-    end_date = db.Column(db.DateTime(timezone=True))  # Explicitly set timezone=True
-    time_duration = db.Column(db.Integer, nullable=False)  # in minutes
+    start_date = db.Column(db.DateTime(timezone=True), nullable=False)
+    end_date = db.Column(db.DateTime(timezone=True))
+    time_duration = db.Column(db.Integer, nullable=False)
     passing_score = db.Column(db.Integer, nullable=False)
     max_attempts = db.Column(db.Integer, default=3)
     chapter_id = db.Column(db.Integer, db.ForeignKey('chapter.id'), nullable=False)
@@ -48,7 +48,6 @@ class Quiz(db.Model):
     created_at = db.Column(db.DateTime(timezone=True), default=datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime(timezone=True), onupdate=datetime.now(timezone.utc))
     
-    # Define the relationships without conflicting backrefs
     questions = db.relationship('Question', backref='quiz', lazy=True)
     attempts = db.relationship('QuizAttempt', backref='quiz', lazy=True)
     scores = db.relationship('Score', backref='quiz', lazy=True)

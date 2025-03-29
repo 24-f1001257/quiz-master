@@ -2,9 +2,17 @@
 
 {% block title %}Search Results{% endblock %}
 
+{% set active_dashboard = true %}
+{% set active_subjects = false %}
+{% set active_quizzes = false %}
+{% set active_users = false %}
+{% set active_login = false %}
+{% set active_signup = false %}
+{% set active_profile = false %}
+
 {% block content %}
 <div class="container py-4">
-    <!-- Header -->
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1><i class="bi bi-search"></i> Search Results</h1>
         <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
@@ -13,13 +21,13 @@
     </div>
     
     {% if query %}
-    <!-- Search Results -->
+
     <div class="card shadow-sm">
         <div class="card-header">
             <h3 class="mb-0">Search Results for "{{ query }}"</h3>
         </div>
         <div class="card-body p-0">
-            <!-- Quizzes Section (most important, so it's first) -->
+            <!-- Quizzes Section -->
             <div class="p-3 border-bottom">
                 <h4 class="mb-3">
                     <i class="bi bi-clipboard2-check"></i> Quizzes

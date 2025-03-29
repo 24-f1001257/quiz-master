@@ -1,6 +1,14 @@
 {% extends 'base.html' %}
 {% block title %}My Profile{% endblock %}
 
+{% set active_dashboard = false %}
+{% set active_subjects = false %}
+{% set active_quizzes = false %}
+{% set active_users = false %}
+{% set active_login = false %}
+{% set active_signup = false %}
+{% set active_profile = true %}
+
 {% block content %}
 <div class="container mt-5">
     <div class="row">

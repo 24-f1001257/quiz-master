@@ -152,33 +152,25 @@ def delete_subject(subject_id):
     subject = Subject.query.get_or_404(subject_id)
     
     try:
-        # Get all chapters for this subject
         chapters = Chapter.query.filter_by(subject_id=subject_id).all()
         
         for chapter in chapters:
-            # Get all quizzes for this chapter
             quizzes = Quiz.query.filter_by(chapter_id=chapter.id).all()
             
             for quiz in quizzes:
-                # Delete options for each question
                 for question in quiz.questions:
                     Option.query.filter_by(question_id=question.id).delete()
                 
-                # Delete questions
                 Question.query.filter_by(quiz_id=quiz.id).delete()
                 
-                # Delete user responses for each attempt
                 for attempt in quiz.attempts:
                     UserResponse.query.filter_by(quiz_attempt_id=attempt.id).delete()
                 
-                # Delete attempts and scores
                 QuizAttempt.query.filter_by(quiz_id=quiz.id).delete()
                 Score.query.filter_by(quiz_id=quiz.id).delete()
                 
-                # Delete the quiz itself
                 db.session.delete(quiz)
             
-        # Now it's safe to delete chapters and the subject
         Chapter.query.filter_by(subject_id=subject_id).delete()
         db.session.delete(subject)
         db.session.commit()
@@ -189,7 +181,6 @@ def delete_subject(subject_id):
         flash(f'Error deleting subject: {str(e)}', 'danger')
     
     return redirect(url_for('admin_subjects'))
-
 
 @app.route('/admin/chapter/add', methods=['POST'])
 @admin_required
@@ -244,32 +235,25 @@ def add_chapter():
 @admin_required
 def delete_chapter(chapter_id):
     chapter = Chapter.query.get_or_404(chapter_id)
-    subject_id = chapter.subject_id  # Save the subject ID before deleting the chapter
+    subject_id = chapter.subject_id
     
     try:
-        # Get all quizzes for this chapter
         quizzes = Quiz.query.filter_by(chapter_id=chapter.id).all()
         
         for quiz in quizzes:
-            # Delete options for each question
             for question in quiz.questions:
                 Option.query.filter_by(question_id=question.id).delete()
             
-            # Delete questions
             Question.query.filter_by(quiz_id=quiz.id).delete()
             
-            # Delete user responses for each attempt
             for attempt in quiz.attempts:
                 UserResponse.query.filter_by(quiz_attempt_id=attempt.id).delete()
             
-            # Delete attempts and scores
             QuizAttempt.query.filter_by(quiz_id=quiz.id).delete()
             Score.query.filter_by(quiz_id=quiz.id).delete()
             
-            # Delete the quiz
             db.session.delete(quiz)
         
-        # Now it's safe to delete the chapter
         db.session.delete(chapter)
         db.session.commit()
         
@@ -278,7 +262,6 @@ def delete_chapter(chapter_id):
         db.session.rollback()
         flash(f'Error deleting chapter: {str(e)}', 'danger')
     
-    # Redirect to the subject page if deleting from there, otherwise go to admin subjects
     return redirect(url_for('admin_subjects'))
 
 @app.route('/admin/chapter/<int:chapter_id>/edit', methods=['POST'])
@@ -305,7 +288,6 @@ def edit_chapter(chapter_id):
     
     return redirect(url_for('admin'))
 
-#Duplicate Quiz addingg route
 @app.route('/admin/quiz/<int:chapter_id>/add', methods=['GET', 'POST'])
 @admin_required
 def add_quiz_form(chapter_id):
@@ -439,7 +421,6 @@ def delete_quiz(quiz_id):
 @app.route('/admin/quizzes', methods=['GET'])
 @admin_required
 def allQuizzes():
-    # Get filter parameters
     subject_id = request.args.get('subject_id')
     chapter_id = request.args.get('chapter_id')
     date_filter = request.args.get('date')
@@ -450,19 +431,17 @@ def allQuizzes():
     
     query = Quiz.query
     
-    # Apply filters - explicitly convert to integers and handle potential errors
     if subject_id and subject_id != '':
         try:
             subject_id = int(subject_id)
             chapters = Chapter.query.filter_by(subject_id=subject_id).all()
             chapter_ids = [chapter.id for chapter in chapters]
-            if chapter_ids:  # Only apply filter if there are chapters
+            if chapter_ids:
                 query = query.filter(Quiz.chapter_id.in_(chapter_ids))
                 app.logger.info(f"Filtering by subject_id {subject_id}, chapter_ids: {chapter_ids}")
         except (ValueError, TypeError):
             app.logger.warning(f"Invalid subject_id: {subject_id}")
     
-    # Direct filter by chapter if specified
     if chapter_id and chapter_id != '':
         try:
             chapter_id = int(chapter_id)
@@ -473,12 +452,10 @@ def allQuizzes():
     
     if date_filter and date_filter != '':
         try:
-            # Convert the filter date to a timezone-aware datetime at the start of the day
             filter_date = datetime.strptime(date_filter, '%Y-%m-%d')
             filter_date = filter_date.replace(tzinfo=timezone.utc)
             filter_date_end = filter_date.replace(hour=23, minute=59, second=59)
             
-            # Filter quizzes that start on the selected date
             query = query.filter(Quiz.start_date >= filter_date, Quiz.start_date <= filter_date_end)
             app.logger.info(f"Filtering by date: {date_filter}")
         except ValueError:
@@ -496,7 +473,6 @@ def allQuizzes():
             query = query.filter(Quiz.time_duration > 30)
             app.logger.info("Filtering: duration > 30 minutes")
     
-    # Apply sorting
     if sort_by == 'date_desc':
         query = query.order_by(Quiz.start_date.desc())
     elif sort_by == 'date_asc':
@@ -513,7 +489,6 @@ def allQuizzes():
     quizzes = query.all()
     app.logger.info(f"Query returned {len(quizzes)} quizzes")
     
-    # Ensure all quiz dates are timezone-aware
     for quiz in quizzes:
         if quiz.start_date and quiz.start_date.tzinfo is None:
             db.session.query(Quiz).filter_by(id=quiz.id).update({
@@ -524,11 +499,10 @@ def allQuizzes():
                 'end_date': quiz.end_date.replace(tzinfo=timezone.utc)
             })
     
-    # Commit any timezone updates and refresh quizzes
     if any(quiz.start_date.tzinfo is None for quiz in quizzes if quiz.start_date) or \
        any(quiz.end_date.tzinfo is None for quiz in quizzes if quiz.end_date):
         db.session.commit()
-        quizzes = query.all()  # Refresh the quiz objects
+        quizzes = query.all()
     
     subjects = Subject.query.all()
     return render_template('admin/admin_quiz_list.html', 
@@ -544,11 +518,9 @@ def toggle_quiz_visibility(quiz_id):
     try:
         quiz = Quiz.query.get_or_404(quiz_id)
         
-        # Parse request data
         data = request.get_json()
         is_active = data.get('is_active', False) if data else False
         
-        # Update quiz visibility
         quiz.is_active = is_active
         db.session.commit()
         
@@ -639,11 +611,9 @@ def edit_question(question_id):
             flash('Question text is required!', 'danger')
             return redirect(url_for('add_quiz_questions', quiz_id=quiz.id))
         
-        # Update question details
         question.statement = question_text
         question.points = points
         
-        # Update options
         correct_option_index = int(request.form.get('correct_option', 0))
         options = question.options
         
@@ -664,7 +634,6 @@ def edit_question(question_id):
     
     return redirect(url_for('add_quiz_questions', quiz_id=quiz.id))
 
-
 @app.route('/admin/subject/<int:subject_id>/quizzes')
 @admin_required
 def subject_quizzes(subject_id):
@@ -678,7 +647,6 @@ def subject_quizzes(subject_id):
             .order_by(Quiz.start_date.desc())\
             .all()
         
-        # Ensure all quiz dates are timezone-aware
         for quiz in chapter.quizzes:
             if quiz.start_date and quiz.start_date.tzinfo is None:
                 db.session.query(Quiz).filter_by(id=quiz.id).update({
@@ -689,17 +657,14 @@ def subject_quizzes(subject_id):
                     'end_date': quiz.end_date.replace(tzinfo=timezone.utc)
                 })
         
-        # Commit changes if any dates were updated
         if any(quiz.start_date.tzinfo is None for quiz in chapter.quizzes if quiz.start_date) or \
            any(quiz.end_date.tzinfo is None for quiz in chapter.quizzes if quiz.end_date):
             db.session.commit()
-            # Refresh quizzes after committing changes
             chapter.quizzes = Quiz.query.filter_by(chapter_id=chapter.id)\
                 .order_by(Quiz.start_date.desc())\
                 .all()
     
     return render_template('admin/admin_subject_quizzes.html', subject=subject)
-
 
 @app.route('/admin/subjects')
 @admin_required
@@ -715,14 +680,11 @@ def admin_subjects():
 @app.route('/admin/users')
 @admin_required
 def admin_users():
-    # Get filter parameters
     search = request.args.get('search', '')
     sort_by = request.args.get('sort_by', 'recent')
     
-    # Base query - exclude admin user
     query = User.query.filter(User.email != 'admin@admin.com')
     
-    # Apply search filter if provided
     if search:
         search_term = f"%{search}%"
         query = query.filter(
@@ -732,7 +694,6 @@ def admin_users():
             )
         )
     
-    # Apply sorting
     if sort_by == 'recent':
         query = query.order_by(User.created_at.desc())
     elif sort_by == 'name_asc':
@@ -742,16 +703,12 @@ def admin_users():
     elif sort_by == 'email_asc':
         query = query.order_by(User.email.asc())
     
-    # Execute query
     users = query.all()
     
-    # Load quiz attempts and scores for each user
     for user in users:
-        # Eager load relationships
         user.quiz_attempts = QuizAttempt.query.filter_by(user_id=user.id).all()
         user.scores = Score.query.filter_by(user_id=user.id).all()
         
-        # Load quiz data for each score
         for score in user.scores:
             score.quiz = Quiz.query.get(score.quiz_id)
     
@@ -771,19 +728,16 @@ def add_user():
             flash('Name, email and password are required!', 'danger')
             return redirect(url_for('admin_users'))
         
-        # Check if user already exists
         if User.query.filter_by(email=email).first():
             flash('A user with this email already exists!', 'danger')
             return redirect(url_for('admin_users'))
         
         try:
-            # Parse date of birth if provided
             dob_datetime = None
             if dob:
                 dob_datetime = datetime.strptime(dob, '%Y-%m-%d')
                 dob_datetime = dob_datetime.replace(tzinfo=timezone.utc)
             
-            # Create new user
             new_user = User(
                 fullName=fullName,
                 email=email,
@@ -880,7 +834,6 @@ def admin_search():
                               query='',
                               search_type='all')
     
-    # Use a percentage wildcard for LIKE queries
     search_term = f"%{query}%"
     
     results = {
@@ -890,7 +843,6 @@ def admin_search():
         'quizzes': []
     }
     
-    # Search based on type
     if search_type == 'all' or search_type == 'users':
         users = User.query.filter(
             db.or_(
@@ -917,7 +869,6 @@ def admin_search():
             )
         ).join(Subject).all()
         
-        # Load the subject for each chapter
         for chapter in chapters:
             chapter.subject = Subject.query.get(chapter.subject_id)
         
@@ -931,7 +882,6 @@ def admin_search():
             )
         ).all()
         
-        # Load the chapter and subject for each quiz
         for quiz in quizzes:
             quiz.chapter = Chapter.query.get(quiz.chapter_id)
             if quiz.chapter:
@@ -947,16 +897,13 @@ def admin_search():
 @app.route('/admin/summary')
 @admin_required
 def admin_summary():
-    # Ensure the user is an admin
     if 'admin_id' not in session:
         flash('Unauthorized access!', 'danger')
         return redirect(url_for('admin'))
 
-    # Get admin details
     admin_id = session.get('admin_id')
     admin = User.query.get_or_404(admin_id)
 
-    # Get subject-wise top scores
     subject_top_scores = db.session.query(
         Subject.name,
         db.func.max(Score.total_scored).label('top_score')
@@ -970,11 +917,9 @@ def admin_summary():
         Subject.name
     ).all()
 
-    # Format subject top scores for chart
     subject_names = [s.name for s in subject_top_scores]
     subject_top_scores_data = [float(s.top_score) if s.top_score else 0 for s in subject_top_scores]
 
-    # Get subject-wise user attempts
     subject_user_attempts = db.session.query(
         Subject.name,
         db.func.count(QuizAttempt.id).label('attempts')
@@ -988,11 +933,9 @@ def admin_summary():
         Subject.name
     ).all()
 
-    # Format subject user attempts for chart
     subject_attempts_names = [s.name for s in subject_user_attempts]
     subject_attempts_data = [s.attempts for s in subject_user_attempts]
 
-    # Get quiz-wise top scores
     quiz_top_scores = db.session.query(
         Quiz.name,
         db.func.max(Score.total_scored).label('top_score')
@@ -1002,11 +945,9 @@ def admin_summary():
         Quiz.name
     ).all()
 
-    # Format quiz top scores for chart
     quiz_names = [q.name for q in quiz_top_scores]
     quiz_top_scores_data = [float(q.top_score) if q.top_score else 0 for q in quiz_top_scores]
 
-    # Prepare stats for the template
     stats = {
         'subject_names': subject_names,
         'subject_top_scores': subject_top_scores_data,
@@ -1016,7 +957,6 @@ def admin_summary():
         'quiz_top_scores': quiz_top_scores_data
     }
 
-    # Convert to JSON-safe data for the template
     import json
     stats['subject_names_json'] = json.dumps(subject_names)
     stats['subject_top_scores_json'] = json.dumps(subject_top_scores_data)

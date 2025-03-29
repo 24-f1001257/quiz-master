@@ -1,9 +1,17 @@
 {% extends "base.html" %}
 {% block title %}Available Quizzes{% endblock %}
 
+{% set active_dashboard = false %}
+{% set active_subjects = false %}
+{% set active_quizzes = true %}
+{% set active_users = false %}
+{% set active_login = false %}
+{% set active_signup = false %}
+{% set active_profile = false %}
+
 {% block content %}
 <div class="container py-4">
-    <!-- Header Section -->
+
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Available Quizzes</h1>
         <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
@@ -137,7 +145,6 @@
                 
                 <!-- Card Body -->
                 <div class="card-body">
-                    <!-- Subject and Chapter Information -->
                     <div class="d-flex align-items-center mb-3">
                         {% if quiz.chapter and quiz.chapter.subject %}
                         <span class="badge me-2" style="background-color: var(--primary-color);">
@@ -156,7 +163,7 @@
                     </div>
                     <p>{{ quiz.description }}</p>
                     
-                    <!-- Quiz Meta Information -->
+                    <!-- Quiz Information -->
                     <div class="mb-3">
                         <p class="mb-2">
                             <i class="bi bi-clock"></i> 
@@ -249,7 +256,6 @@
     {% endif %}
 </div>
 
-<!-- JavaScript to handle dynamic chapter filtering based on subject selection -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const subjectFilter = document.getElementById('subject_filter');
@@ -260,19 +266,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const chapterOptions = chapterFilter.querySelectorAll('option:not(:first-child)');
         
         if (selectedSubject === '') {
-            // Show all chapters if no subject is selected
             chapterOptions.forEach(option => {
                 option.style.display = '';
             });
         } else {
-            // Show only chapters for the selected subject
             chapterOptions.forEach(option => {
                 const subjectId = option.getAttribute('data-subject');
                 if (subjectId === selectedSubject) {
                     option.style.display = '';
                 } else {
                     option.style.display = 'none';
-                    // Unselect if hidden but was selected
                     if (option.selected) {
                         option.selected = false;
                     }
@@ -281,13 +284,10 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Filter chapters on page load
     filterChapters();
     
-    // Filter chapters when subject selection changes
     subjectFilter.addEventListener('change', function() {
         filterChapters();
-        // Reset chapter selection to "All Chapters" when subject changes
         chapterFilter.selectedIndex = 0;
     });
 });

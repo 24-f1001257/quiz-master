@@ -1,14 +1,24 @@
 {% extends 'base.html' %}
 {% block title %}Edit Profile{% endblock %}
 
+{% set active_dashboard = false %}
+{% set active_subjects = false %}
+{% set active_quizzes = false %}
+{% set active_users = false %}
+{% set active_login = false %}
+{% set active_signup = false %}
+{% set active_profile = true %}
+
 {% block content %}
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
             <div class="card shadow-lg">
+
                 <div class="card-header">
                     <h2 class="mb-0"><i class="bi bi-pencil-square"></i> Edit Profile</h2>
                 </div>
+                
                 <div class="card-body">
                     <form action="{{ url_for('edit_profile') }}" method="POST">
                         <!-- Personal Information Section -->
